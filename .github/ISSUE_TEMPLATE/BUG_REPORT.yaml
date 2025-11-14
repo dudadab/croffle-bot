@@ -1,7 +1,7 @@
 name: Bug Report
 description: If an error or error occurs, report it here.
 title: "[BUG]: "
-labels: "BUG"
+labels: "bug"
 type: bug
 body:
   - type: input
