@@ -1,6 +1,6 @@
 name: Bug Report
 description: If an error or error occurs, report it here.
-title: "[BUG]: "
+title: "[BUG] "
 labels: "bug"
 type: bug
 body:
