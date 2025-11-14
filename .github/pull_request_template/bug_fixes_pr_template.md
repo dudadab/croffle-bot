@@ -1,14 +1,6 @@
----
-name: '[PR] Default Pull Request Template'
-about: 'Default template for pull requests'
-title: '[PR]: '
-labels: 'need-review'
-assignees: 'github-username'
----
-
 ## Overview
 
-- Please provide a brief description of the changes made in this pull request.
+- Please provide a brief description of the bug that was fixed and the context in which it occurred.
 
 ## Related Issue
 

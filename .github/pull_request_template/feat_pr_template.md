@@ -1,11 +1,3 @@
----
-name: '[PR] Features Pull Request Template'
-about: 'Use this template for submitting new feature pull requests.'
-title: '[FEATURES]: '
-labels: 'need-review, enhancement'
-assignees: 'github-username'
----
-
 ## Overview
 
 - Please provide a brief description of the new feature being added and its intended purpose.

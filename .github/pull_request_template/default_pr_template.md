@@ -1,14 +1,6 @@
----
-name: '[PR] Bug Fixes Pull Request Template'
-about: 'Use this template for submitting bug fix pull requests.'
-title: '[BUG-FIX]: '
-labels: 'need-review, bug'
-assignees: 'github-username'
----
-
 ## Overview
 
-- Please provide a brief description of the bug that was fixed and the context in which it occurred.
+- Please provide a brief description of the changes made in this pull request.
 
 ## Related Issue
 
