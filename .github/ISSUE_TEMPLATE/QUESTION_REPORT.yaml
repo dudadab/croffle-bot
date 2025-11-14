@@ -1,0 +1,35 @@
+name: 질문 사항 추가
+description: 질문할 사항이 있을 때 질문을 추가합니다
+title: "[QUESTION] "
+labels: "질문"
+type: "issue"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 질문하기 전에
+        - 이미 등록된 이슈가 있는지 확인해주세요
+        - 문서를 먼저 확인해주세요
+
+  - type: textarea
+    id: question
+    attributes:
+      label: "질문 내용"
+      description: "궁금한 내용을 상세히 작성해주세요"
+      placeholder: " 예: --- 기능"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: "질문 카테고리"
+      description: "질문이 해당하는 카테고리를 선택해주세요"
+      options:
+        - 사용 방법
+        - 설치/설정
+        - 기능 문의
+        - 에러/문제
+        - 기타
+    validations:
+      required: true
