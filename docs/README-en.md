@@ -93,7 +93,7 @@ docker compose down
 
 - **Goals :** Use the `dca` library to implement basic music playback capabilities
 - **Major Work:**
-- &#x20;The `ffmpeg` and `yt-clp` controls are delegated to `dca`
+- &#x20;The `ffmpeg` and `yt-dlp` controls are delegated to `dca`
 - Implementing **Queue** Management
 - **Implement playback control** (play, pause, skip, etc.)
 - **Porcessing commands**: parsing and executing commands from discord messages
