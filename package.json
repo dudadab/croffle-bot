@@ -34,6 +34,7 @@
 		"colorette": "^2.0.20",
 		"discord-player": "^7.1.0",
 		"discord.js": "^14.17.3",
+		"mediaplex": "^1.0.0",
 		"play-dl": "^1.9.7"
 	},
 	"devDependencies": {
@@ -54,8 +55,7 @@
 		"start": "node dist/index.js",
 		"dev": "npm run build && npm run start",
 		"watch:start": "tsc-watch --onSuccess \"npm run start\"",
-		"format": "prettier --write \"src/\"",
-		"test": "vitest"
+		"format": "prettier --write \"src/\""
 	},
 	"packageManager": "yarn@4.12.0"
 }
