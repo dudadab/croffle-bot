@@ -6,27 +6,27 @@
 
 # croffle-bot
 
-Node.js와 TypeScript를 기반으로 구축된 디스코드 음악 봇 프로젝트입니다. `discord.js`와 `@discordjs/voice` 라이브러리를 사용하며, `ffmpeg`와 `yt-dlp`를 통해 고성능 오디오 스트리밍 기능을 구현합니다.
+Sapphire 프레임워크와 `discord-player`를 기반으로 한 고성능 디스코드 음악 봇입니다. Node.js 18와 TypeScript를 사용하여 안정적이고 구조화된 개발 환경을 제공합니다.
 
 ## 1. 프로젝트 목표
 
-1. **Type Safety:** TypeScript를 도입하여 런타임 에러를 방지하고 코드의 안정성 및 유지보수성 확보
-2. **Process Management:** Node.js의 `child_process`와 비동기 처리를 활용한 효율적인 외부 프로세스(`ffmpeg`, `yt-dlp`) 제어
-3. **Stream Architecture:** `prism-media` 및 오디오 파이프라인 직접 제어를 통한 고성능 스트리밍 구현
-4. **Environment Consistency:** Docker & Docker Compose를 활용하여 개발 및 배포 환경의 일관성 보장
+1. **Type Safety:** TypeScript와 Sapphire Framework를 활용하여 안정성있고 유지보수가 용이한 코드베이스 구축
+2. **High Performance:** `discord-player` v7의 익스트랙터 시스템을 활용한 효율적인 오디오 처리
+3. **Modular Architecture:** 프레임워크 기반의 플러그인 및 리스너 구조를 활용하여 기능 확장성 확보
+4. **Modern Deployment:** Yarn 4(Berry)와 Docker Multi-stage 빌드를 통한 일관된 개발 및 배포 환경 구축
 
 ---
 
 ## 2. 기술 스택
 
-- **언어:** TypeScript (Node.js)
-- **핵심 라이브러리:**
-  - `discord.js`: 디스코드 API 연동
-  - `@discordjs/voice`: 디스코드 보이스 채널 및 오디오 제어
-  - `prism-media`: 오디오 트랜스코딩 및 스트림 처리
-- **오디오 처리:**`ffmpeg`, `yt-dlp`
-- **패키지 매니저:** `npm`
-- **컨테이너화:** Docker, Docker Compos
+- **Runtime:** [Node.js 18+](https://nodejs.org/ko/)
+- **Language:** TypeScript
+- **Framework:** [Sapphire](https://sapphirejs.dev/)
+- **Libraries:** [discord.js v14](https://discord.js.org/), [@discordjs/voice](https://github.com/discordjs/voice)
+- **Music Engine:** [discord-player v7](https://discord-player.js.org/)
+- **Package Manager:** Yarn 4.12.0 (Berry)
+- **Audio Processing:** ffmpeg, yt-dlp
+- **Infrastructure:** Docker, Docker Compose
 
 ---
 
@@ -37,12 +37,12 @@ Node.js와 TypeScript를 기반으로 구축된 디스코드 음악 봇 프로�
 - **Git clone**
 
 ```sh
-git clone <repository-url>
-cd <repository-directory>
+git clone [repository-url]
+cd [repository-directory]
 ```
 
 - **필수 프로그램 설치**
-  - **Node.js 22+:** [Official](https://nodejs.org/ko) 에서 설치
+  - **Node.js 18+:** [Official](https://nodejs.org/ko) 에서 설치
   - **yt-dlp:** `winget`, `apt`, `dnf`를 활용하여 설치
   - **ffmpeg:** `winget`, `apt`, `dnf`를 활용하여 설치
 - `.env` **파일 설정**
@@ -55,39 +55,34 @@ CLIENT_ID="YOUR_BOT_CLIENT_ID_HERE"
 GUILD_ID="YOUR_TEST_SERVER_ID_HERE" # (Optional) 봇을 테스트할 특정 서버 ID
 ```
 
-- **의존성 설치**
+- **개발 환경 설정**
 
 ```sh
-npm install
-```
+# 의존성 설치
+yarn install
 
-- **봇 실행**
+# 개발 서버 실행
+yarn watch:start
 
-```sh
-npm dev
+# 빌드
+yarn build
+
+# 봇 실행
+yarn start
 ```
 
 ### 3.2. Docker Compose 환경
 
-> **목적:** `ffmpeg`, `yt-dlp` 설치 없이, 실제 배포 환경과 동일한 환경에서 테스트
+> **목적:** 로컬 환경에 별도의 종속성 설치 없이 배포 환경과 동일한 상태에서 테스트
 
 - **Docker 설치 및 `.env` 파일 생성**
 - **봇 실행**
 
 ```sh
 docker compose up --build -d
-```
 
-- **로그 확인**
-
-```sh
+# 로그 확인
 docker compose logs -f
-```
-
-- **종료**
-
-```sh
-docker compose down
 ```
 
 ---
@@ -98,10 +93,12 @@ docker compose down
 
 - **목표:** `@discordjs/voice`를 사용하여 기본적인 음악 재생 및 큐 기능 구현
 - **주요 작업:**
-  - 명령어 핸들러 (Command Handler) 구현
-  - `AudioPlayer` 및 `VoiceConnection` 상태 관리 모듈화
+  - [x] Sapphire Framework 클라이언트 설정 및 초기화
+  - [x] discord-player v7 통합 및 익스트랙터 로드 설정
+  - [x] 기본 ping 명령어 및 이벤트 리스너 구조 구축
+  - [x] Docker 및 Docker Compose 배포 환경 구성
   - 재생 제어 (Play, Pause, Skip, Queue) 핵심 로직 구현
-- **주요 기능:**
+- **주요 기능 구현:**
   - [ ] `!join`/`!leave`: 음성 채널 입장/퇴장
   - [ ] `!play <url>`/`!p <url>`: URL 기반 음악 재생
   - **노래 큐(Queue) 관리**
@@ -117,25 +114,13 @@ docker compose down
     - [ ] `!help`: 봇이 가진 모든 명령어와 사용법 출력
     - [ ] `!ping`: 봇의 현재 반응 속도 출력 (지연 시간 확인)
 
-### 4.2. 모듈화 및 ffmpeg/yt-dlp 직접 제어
-
-- **목표:** `ffmpeg` 직접 제어 및 안정성 강화 전환
-- **주요 작업:**
-  - `yt-dlp`와 `ffmpeg`를 연동하는 Custom Audio Resource 구현
-  - 메모리 누수 방지를 위한 리소스 해제 로직 강화
-  - 가사 검색(Lyrics) 및 플레이리스트 지원
-- **주요 기능:**
-  - [ ] `yt-dlp` Wrapper 모듈 최적화
-  - [ ] `ffmpeg` 오디오 필터 (Bass Boost 등) 지원
-  - [ ] 에러 핸들링 및 자동 재연결 로직 구현
-
 ---
 
 ## 5. 팀 개발 규칙
 
 ### 5.1. 브랜치 전략
 
-- **GitHub Flow:** `main` 브랜치 보호, 모든 기능 추가는 Feature 브랜치에서 작업하여 PR 진행
+- **GitHub Flow:** 메인 레포지토리를 Fork 하여 개발한 후 PR(Pull Request)을 생성합니다.
 
 ### 5.2. 작업 흐름
 
@@ -152,3 +137,9 @@ docker compose down
 - `docs`: 문서 수정 (README 등)
 - `refactor`: 코드 리팩토링
 - `style`: 코드 스타일 수정 (포매팅)
+
+---
+
+## 6. 라이선스
+
+이 프로젝트는 MIT 라이선스에 따라 라이선스가 부여됩니다. 자세한 내용은 [LICENSE](./LICENSE) 파일을 참조하세요.

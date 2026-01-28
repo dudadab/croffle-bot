@@ -28,8 +28,11 @@ export class CustomClient extends SapphireClient {
 		this.player = new Player(this, {
 			skipFFmpeg: false
 		});
+	}
 
+	public override async login(token?: string) {
 		this.player.extractors.loadMulti(DefaultExtractors);
+		return super.login(token);
 	}
 }
 
