@@ -1,32 +1,32 @@
 # README.md
 
 <div align="center">
-<img height="150" width="150" src="./img/bot-icon-wt.png" alt="bot-icon"/>
+  <img height="150" width="150" src="./img/bot-icon-wt.png" alt="bot-icon"/>
 </div>
 
 # croffle-bot
 
-A Discord music bot project built on **Node.js** and **TypeScript**. It utilizes `discord.js` and the `@discordjs/voice` library, implementing high-performance audio streaming capabilities via `ffmpeg` and `yt-dlp`.
+A high-performance Discord music bot based on the Sapphire framework and `discord-player`. It provides a stable and structured development environment using Node.js 18 and TypeScript.
 
-## 1. Project Objectives
+## 1. Project Goals
 
-1. **Type Safety:** Ensure code stability and maintainability by adopting TypeScript to prevent runtime errors.
-2. **Process Management:** Efficient control of external processes (`ffmpeg`, `yt-dlp`) utilizing Node.js `child_process` and asynchronous processing.
-3. **Stream Architecture:** Implement high-performance streaming through direct control of `prism-media` and audio pipelines.
-4. **Environment Consistency:** Ensure consistency in development and deployment environments using Docker & Docker Compose.
+1.  **Type Safety:** Build a stable and maintainable codebase using TypeScript and the Sapphire Framework.
+2.  **High Performance:** Efficient audio processing using the extractor system of `discord-player` v7.
+3.  **Modular Architecture:** Ensure feature scalability by utilizing the framework's plugin and listener structure.
+4.  **Modern Deployment:** Establish a consistent development and deployment environment through Yarn 4 (Berry) and Docker Multi-stage builds.
 
 ---
 
 ## 2. Tech Stack
 
-- **Language:** TypeScript (Node.js)
-- **Core Libraries:**
-  - `discord.js`: Discord API integration
-  - `@discordjs/voice`: Discord Voice Channel and Audio control
-  - `prism-media`: Audio transcoding and stream processing
-- **Audio Processing:** `ffmpeg`, `yt-dlp`
-- **Package Manager:** `npm`
-- **Containerization:** Docker, Docker Compose
+- **Runtime:** [Node.js 18+](https://nodejs.org/)
+- **Language:** TypeScript
+- **Framework:** [Sapphire](https://sapphirejs.dev/)
+- **Libraries:** [discord.js v14](https://discord.js.org/), [@discordjs/voice](https://github.com/discordjs/voice)
+- **Music Engine:** [discord-player v7](https://discord-player.js.org/)
+- **Package Manager:** Yarn 4.12.0 (Berry)
+- **Audio Processing:** ffmpeg, yt-dlp
+- **Infrastructure:** Docker, Docker Compose
 
 ---
 
@@ -37,57 +37,52 @@ A Discord music bot project built on **Node.js** and **TypeScript**. It utilizes
 - **Git clone**
 
 ```sh
-git clone <repository-url>
-cd <repository-directory>
+git clone [repository-url]
+cd [repository-directory]
 ```
 
-- **Prerequisites Installation**
-- **Node.js 22+:** Install from [Official Site](https://nodejs.org/en)
-- **yt-dlp:** Install using `winget`, `apt`, or `dnf`
-- **ffmpeg:** Install using `winget`, `apt`, or `dnf`
-- **.env Configuration**
-  - Create a `.env` file in the project root directory and add the following:
+- **Install Required Programs**
+  - **Node.js 18+:** Install from the [Official Website](https://nodejs.org/)
+  - **yt-dlp:** Install using `winget`, `apt`, or `dnf`
+  - **ffmpeg:** Install using `winget`, `apt`, or `dnf`
+- **Configure `.env` file**
+  - Create a `.env` file in the project root directory and add the following content:
 
 ```ini
 BOT_TOKEN="YOUR_DISCORD_BOT_TOKEN_HERE"
 CLIENT_ID="YOUR_BOT_CLIENT_ID_HERE"
 
-GUILD_ID="YOUR_TEST_SERVER_ID_HERE" # (Optional) Specific Server ID for bot testing
+GUILD_ID="YOUR_TEST_SERVER_ID_HERE" # (Optional) Specific server ID for testing the bot
 ```
 
-- **Install Dependencies**
+- **Setup Development Environment**
 
 ```sh
-npm install
-```
+# Install dependencies
+yarn install
 
-- **Run Bot**
+# Run development server
+yarn watch:start
 
-```sh
-npm dev
+# Build
+yarn build
+
+# Run bot
+yarn start
 ```
 
 ### 3.2. Docker Compose Environment
 
-> **Purpose:** Test in an environment identical to production without installing `ffmpeg` or `yt-dlp` locally.
+> **Purpose:** To test in an environment identical to production without installing dependencies locally.
 
-- **Install Docker & Create `.env` file**
-- **Run Bot**
+- **Install Docker and create the `.env` file**
+- **Run the bot**
 
 ```sh
 docker compose up --build -d
-```
 
-- **Check Logs**
-
-```sh
+# Check logs
 docker compose logs -f
-```
-
-- **Stop**
-
-```sh
-docker compose down
 ```
 
 ---
@@ -98,59 +93,53 @@ docker compose down
 
 - **Goal:** Implement basic music playback and queue functionality using `@discordjs/voice`.
 - **Key Tasks:**
-  - Implement Command Handler.
-  - Modularize `AudioPlayer` and `VoiceConnection` state management.
+  - [x] Set up and initialize the Sapphire Framework client.
+  - [x] Integrate discord-player v7 and configure extractor loading.
+  - [x] Build the basic `ping` command and event listener structure.
+  - [x] Configure the Docker and Docker Compose deployment environment.
   - Implement core logic for playback control (Play, Pause, Skip, Queue).
-
-- **Key Features:**
-  - [ ] `!join`/`!leave`: Join/Leave voice channel
-  - [ ] `!play <url>`/`!p <url>`: Play music based on URL
-  - **Song Queue Management**
-    - [ ] `!skip`: Skip the currently playing song
-    - [ ] `!skipto <index>`: Skip to a specific song number (skipping all intermediate songs)
-    - [ ] `!playnext <url>`: Play immediately next (Priority reservation)
-    - [ ] `!pause`/`!resume`: Pause and Resume playback
-    - [ ] `!remove <index>`: Remove a specific song from the queue
-    - [ ] `!clear`: Clear the queue (keeping the current song playing)
-    - [ ] `!stop`: Stop playback and clear the queue
-    - [ ] `!queue`/`!list`: Display the current queue list
-  - Info and Status
-    - [ ] `!help`: Display all bot commands and usage
-    - [ ] `!ping`: Display bot's current response latency
-
-### 4.2. Modularization & Direct ffmpeg/yt-dlp Control
-
-- **Goal:** Switch to direct `ffmpeg` control for enhanced stability.
-- **Key Tasks:**
-  - Implement a Custom Audio Resource connecting `yt-dlp` and `ffmpeg`.
-  - Strengthen resource release logic to prevent memory leaks.
-  - Support for Lyrics and Playlists.
-
-- **Key Features:**
-  - [ ] Optimize `yt-dlp` Wrapper module
-  - [ ] Support `ffmpeg` audio filters (Bass Boost, etc.)
-  - [ ] Implement error handling and automatic reconnection logic
+- **Key Feature Implementation:**
+  - [ ] `!join`/`!leave`: Join/leave a voice channel.
+  - [ ] `!play <url>`/`!p <url>`: Play music from a URL.
+  - **Queue Management**
+    - [ ] `!skip`: Skip the currently playing song.
+    - [ ] `!skipto <queue_number>`: Skip to a specific song in the queue (skipping all songs in between).
+    - [ ] `!playnext <url>`: Play a song immediately after the current one (priority queue).
+    - [ ] `!pause`/`!resume`: Pause and resume playback.
+    - [ ] `!remove <queue_number>`: Remove a specific song from the queue.
+    - [ ] `!clear`: Clear the queue, but keep the current song playing.
+    - [ ] `!stop`: Stop playback and clear the queue.
+    - [ ] `!queue`/`!list`: Display the current queue.
+  - **Information & Status**
+    - [ ] `!help`: Display all available commands and their usage.
+    - [ ] `!ping`: Display the bot's current latency.
 
 ---
 
 ## 5. Team Development Rules
 
-**5.1. Branch Strategy**
+### 5.1. Branching Strategy
 
-- **GitHub Flow:** The `main` branch is protected. All feature additions must be worked on in Feature branches and submitted via PR.
+- **GitHub Flow:** We follow the GitHub Flow. Fork the main repository, develop on your fork, and then create a Pull Request (PR).
 
-**5.2. Workflow**
+### 5.2. Workflow
 
-1. `fetch` from `upstream` to check for the latest code.
-2. Update (`merge`/`pull`) local `master` from `upstream`'s `master`.
-3. Push to `origin` (your forked repository) to synchronize.
-4. Create a branch to perform your work.
-5. Once development is complete, create a PR from `<user>/feat/<branch>` to `Team-Croffle/master`.
+1.  Fetch from `upstream` to check for the latest code.
+2.  Update your local `master` branch from `upstream/master` (via `merge` or `pull`).
+3.  Push changes to your forked repository (`origin`) to keep it synchronized.
+4.  Create a new branch from `master` to work on your feature.
+5.  Once development is complete, create a Pull Request from your feature branch (e.g., `<user>/feat/<branch>`) to `Team-Croffle/master`.
 
-**5.3. Commit Convention**
+### 5.3. Commit Convention
 
-- `feat`: Add new features
-- `fix`: Bug fixes
-- `docs`: Documentation changes (README, etc.)
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Changes to documentation
 - `refactor`: Code refactoring
-- `style`: Code style changes (formatting)
+- `style`: Code style changes (formatting, etc.)
+
+---
+
+## 6. License
+
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
