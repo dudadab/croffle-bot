@@ -4,7 +4,7 @@ import { getVoiceConnection, useQueue } from 'discord-player';
 import type { Message } from 'discord.js';
 
 @ApplyOptions<Command.Options>({
-	description: 'A basic command'
+	description: 'Leaves the voice channel and stops music playback'
 })
 export class UserCommand extends Command {
 	public override async messageRun(message: Message) {

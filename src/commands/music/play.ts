@@ -2,10 +2,9 @@ import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import type { Message } from 'discord.js';
 
-/// Not Implemented Yet
-
+// Not Implemented Yet
 @ApplyOptions<Command.Options>({
-	description: 'A basic command',
+	description: 'Plays music in your current voice channel',
 	aliases: ['p'] // Adding an alias commands for the play command
 })
 export class UserCommand extends Command {
