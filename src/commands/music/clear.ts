@@ -11,6 +11,19 @@ export class UserCommand extends Command {
 	public override async messageRun(message: Message) {
 		if (!message.guildId) return;
 
+		const memberVoiceChannelId = message.member?.voice.channelId;
+		if (!memberVoiceChannelId) {
+			await message.reply('❌ 음성 채널에 먼저 입장해주세요.');
+			return;
+		}
+
+		const botVoiceChannelId = message.guild?.members.me?.voice.channelId;
+
+		if (botVoiceChannelId && botVoiceChannelId !== memberVoiceChannelId) {
+			await message.reply('❌ 봇이 다른 음성 채널에 있습니다. 같은 채널에 입장해주세요.');
+			return;
+		}
+
 		const queue = useQueue(message.guildId);
 
 		if (!queue || queue.tracks.size === 0) {
