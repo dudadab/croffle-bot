@@ -54,6 +54,18 @@ export class YouTubeExtractor extends BaseExtractor {
 		try {
 			console.log(`[YouTubeExtractor] Attempting to stream: ${info.url}`);
 
+			const videoInfo = await play.video_info(info.url);
+
+			if (!videoInfo.format || videoInfo.format.length === 0) {
+				console.error('[YouTubeExtractor] ❌ No streaming formats found! This is a clear sign of a bot block or invalid cookie.');
+				// @ts-ignore
+				if (videoInfo.video_details.unplayable_reason) {
+					// @ts-ignore
+					console.error(`[YouTubeExtractor] Reason: ${videoInfo.video_details.unplayable_reason}`);
+				}
+				throw new Error('No formats available');
+			}
+
 			const stream = await play.stream(info.url, {
 				quality: 2,
 				seek: 0
