@@ -50,7 +50,11 @@ export class CustomClient extends SapphireClient {
 	public override async login(token?: string) {
 		await this.player.extractors.loadMulti(DefaultExtractors);
 		await this.player.extractors.register(YoutubeiExtractor, {
-			cookie: process.env.YOUTUBE_COOKIE || ''
+			cookie: process.env.YOUTUBE_COOKIE || '',
+			generateWithPoToken: true,
+			streamOptions: {
+				useClient: 'ANDROID'
+			}
 		});
 
 		const loaded = this.player.extractors.store.size;
