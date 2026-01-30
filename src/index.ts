@@ -4,7 +4,7 @@ import { LogLevel, SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits } from 'discord.js';
 import { Player } from 'discord-player';
 import { DefaultExtractors } from '@discord-player/extractor';
-import { YouTubeExtractor } from './lib/YoutubeExtractor';
+import { YoutubeiExtractor } from 'discord-player-youtubei';
 
 export class CustomClient extends SapphireClient {
 	public player: Player;
@@ -47,7 +47,7 @@ export class CustomClient extends SapphireClient {
 
 	public override async login(token?: string) {
 		await this.player.extractors.loadMulti(DefaultExtractors);
-		await this.player.extractors.register(YouTubeExtractor, {});
+		await this.player.extractors.register(YoutubeiExtractor, {});
 
 		const loaded = this.player.extractors.store.size;
 		this.logger.info(`Loaded ${loaded} extractors into Discord Player's extractor store.`);
