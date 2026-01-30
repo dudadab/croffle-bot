@@ -27,7 +27,9 @@ export class CustomClient extends SapphireClient {
 		});
 
 		this.player = new Player(this, {
-			skipFFmpeg: false
+			skipFFmpeg: false,
+			connectionTimeout: 10000,
+			probeTimeout: 10000
 		});
 
 		this.player.on('error', (err) => {
@@ -47,7 +49,9 @@ export class CustomClient extends SapphireClient {
 
 	public override async login(token?: string) {
 		await this.player.extractors.loadMulti(DefaultExtractors);
-		await this.player.extractors.register(YoutubeiExtractor, {});
+		await this.player.extractors.register(YoutubeiExtractor, {
+			authentication: process.env.YOUTUBE_COOKIE || ''
+		});
 
 		const loaded = this.player.extractors.store.size;
 		this.logger.info(`Loaded ${loaded} extractors into Discord Player's extractor store.`);
