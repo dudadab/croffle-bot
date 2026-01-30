@@ -1,4 +1,4 @@
-import { BaseExtractor, ExtractorStreamable, StreamType, Track } from 'discord-player';
+import { BaseExtractor, ExtractorStreamable, Track } from 'discord-player';
 import { createReadStream, createWriteStream, existsSync, mkdirSync, statSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
@@ -128,12 +128,7 @@ export class CustomYoutubeExtractor extends BaseExtractor {
 			readable.on('end', cleanup);
 			readable.on('error', cleanup);
 
-			return {
-				$fmt: 'arbitrary',
-				stream: readable,
-				// @ts-ignore
-				type: StreamType.Opus
-			};
+			return readable;
 		} catch (err: any) {
 			console.error('[CustomYT] Stream Error:', err.message);
 			if (existsSync(tempFilePath)) unlinkSync(tempFilePath);
