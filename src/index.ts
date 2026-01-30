@@ -4,6 +4,7 @@ import { LogLevel, SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits } from 'discord.js';
 import { Player } from 'discord-player';
 import { DefaultExtractors } from '@discord-player/extractor';
+import { YouTubeExtractor } from './lib/YoutubeExtractor';
 
 export class CustomClient extends SapphireClient {
 	public player: Player;
@@ -28,10 +29,24 @@ export class CustomClient extends SapphireClient {
 		this.player = new Player(this, {
 			skipFFmpeg: false
 		});
+
+		this.player.events.on('error', (q, err) => {
+			this.logger.error(`[General Player Error] Error emit from the queue: ${q.guild.name} - ${err.message}`);
+		});
+
+		this.player.events.on('playerError', (q, err) => {
+			this.logger.error(`[Player Error] Error emit from the player: ${q.guild.name} - ${err.message}`);
+			console.error(err);
+		});
 	}
 
 	public override async login(token?: string) {
-		this.player.extractors.loadMulti(DefaultExtractors);
+		await this.player.extractors.loadMulti([...DefaultExtractors, YouTubeExtractor]);
+
+		const loaded = this.player.extractors.store.size;
+		this.logger.info(`Loaded ${loaded} extractors into Discord Player's extractor store.`);
+		const extractorNames = this.player.extractors.store;
+		this.logger.info(`Extractors: ${[...extractorNames.keys()].join(', ')}`);
 		return super.login(token);
 	}
 }
