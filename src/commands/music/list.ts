@@ -5,7 +5,7 @@ import type { Message } from 'discord.js';
 
 @ApplyOptions<Command.Options>({
 	description: '현재 대기열에 있는 곡들을 보여줍니다.',
-	aliases: ['l', 'list', '목록', '대기열']
+	aliases: ['l', '목록', '대기열']
 })
 export class UserCommand extends Command {
 	public override async messageRun(message: Message) {
@@ -34,9 +34,8 @@ export class UserCommand extends Command {
 				const extra = tracks.length - 10;
 				response += '\n...그리고 ' + extra + '곡이 더 대기 중입니다.';
 			}
+			response += `\n총 대기 중인 노래: ${tracks.length}곡`;
 		}
-
-		response += `\n총 대기 중인 노래: ${tracks.length}곡`;
 
 		await message.reply(response);
 		return;
