@@ -4,7 +4,6 @@ import { LogLevel, SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits } from 'discord.js';
 import { Player } from 'discord-player';
 import { DefaultExtractors } from '@discord-player/extractor';
-import { YouTubeExtractor } from './lib/YoutubeExtractor';
 
 export class CustomClient extends SapphireClient {
 	public player: Player;
@@ -30,8 +29,13 @@ export class CustomClient extends SapphireClient {
 			skipFFmpeg: false
 		});
 
+		this.player.on('error', (err) => {
+			this.logger.error(`[Player Instance Error] ${err.message}`);
+		});
+
+		// 2. Queue 이벤트 리스너 (기존 코드 유지 및 보강)
 		this.player.events.on('error', (q, err) => {
-			this.logger.error(`[General Player Error] Error emit from the queue: ${q.guild.name} - ${err.message}`);
+			this.logger.error(`[Queue Error] ${q.guild.name}: ${err.message}`);
 		});
 
 		this.player.events.on('playerError', (q, err) => {
@@ -41,12 +45,8 @@ export class CustomClient extends SapphireClient {
 	}
 
 	public override async login(token?: string) {
-		await this.player.extractors.loadMulti([...DefaultExtractors, YouTubeExtractor]);
+		await this.player.extractors.loadMulti(DefaultExtractors);
 
-		const loaded = this.player.extractors.store.size;
-		this.logger.info(`Loaded ${loaded} extractors into Discord Player's extractor store.`);
-		const extractorNames = this.player.extractors.store;
-		this.logger.info(`Extractors: ${[...extractorNames.keys()].join(', ')}`);
 		return super.login(token);
 	}
 }
