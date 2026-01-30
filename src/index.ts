@@ -49,6 +49,10 @@ export class CustomClient extends SapphireClient {
 		await this.player.extractors.loadMulti(DefaultExtractors);
 		await this.player.extractors.register(YouTubeExtractor, {});
 
+		const loaded = this.player.extractors.store.size;
+		this.logger.info(`Loaded ${loaded} extractors into Discord Player's extractor store.`);
+		const extractorNames = this.player.extractors.store;
+		this.logger.info(`Extractors: ${[...extractorNames.keys()].join(', ')}`);
 		return super.login(token);
 	}
 }
