@@ -1,9 +1,13 @@
-import { BaseExtractor, ExtractorInfo, ExtractorSearchContext, SearchQueryType, Track } from 'discord-player';
+import { BaseExtractor, ExtractorExecutionContext, ExtractorInfo, ExtractorSearchContext, SearchQueryType, Track } from 'discord-player';
 import play from 'play-dl';
 
 export class YouTubeExtractor extends BaseExtractor {
-	public override get identifier() {
-		return 'com.discord-player.youtubeextractor' as const;
+	constructor(context: ExtractorExecutionContext, options?: {}) {
+		super(context, options);
+	}
+
+	public override get identifier(): string {
+		return 'kr.croffledev.youtube-extractor';
 	}
 
 	public override async validate(query: string, _type?: SearchQueryType): Promise<boolean> {
