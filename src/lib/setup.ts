@@ -17,8 +17,6 @@ setup({ path: join(srcDir, '.env') });
 
 if (process.env.YOUTUBE_COOKIE) {
 	console.log('YouTube cookie detected, setting up play-dl with the provided cookie.');
-	console.log(`Cookie: ${process.env.YOUTUBE_COOKIE}`);
-
 	play.setToken({
 		youtube: {
 			cookie: process.env.YOUTUBE_COOKIE

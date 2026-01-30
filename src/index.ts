@@ -3,8 +3,9 @@ import './lib/setup';
 import { LogLevel, SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits } from 'discord.js';
 import { Player } from 'discord-player';
-import { DefaultExtractors } from '@discord-player/extractor';
-import { YoutubeiExtractor } from 'discord-player-youtubei';
+// import { DefaultExtractors } from '@discord-player/extractor';
+// import { YoutubeiExtractor } from 'discord-player-youtubei';
+import { CustomYoutubeExtractor } from './lib/YoutubeExtractor';
 
 export class CustomClient extends SapphireClient {
 	public player: Player;
@@ -32,30 +33,34 @@ export class CustomClient extends SapphireClient {
 			probeTimeout: 10000
 		});
 
-		this.player.on('error', (err) => {
-			this.logger.error(`[Player Instance Error] ${err.message}`);
+		this.player.events.on('debug', (_, message) => {
+			console.log('[PLAYER DEBUG]', message);
 		});
 
-		// 2. Queue 이벤트 리스너 (기존 코드 유지 및 보강)
-		this.player.events.on('error', (q, err) => {
-			this.logger.error(`[Queue Error] ${q.guild.name}: ${err.message}`);
+		this.player.events.on('playerError', (_, error) => {
+			console.error('[PLAYER ERROR]', error);
 		});
 
-		this.player.events.on('playerError', (q, err) => {
-			this.logger.error(`[Player Error] Error emit from the player: ${q.guild.name} - ${err.message}`);
-			console.error(err);
+		this.player.events.on('error', (_, error) => {
+			console.error('[QUEUE ERROR]', error);
 		});
 	}
 
 	public override async login(token?: string) {
-		await this.player.extractors.loadMulti(DefaultExtractors);
-		await this.player.extractors.register(YoutubeiExtractor, {
-			cookie: process.env.YOUTUBE_COOKIE,
-			generateWithPoToken: true,
-			streamOptions: {
-				useClient: 'ANDROID'
-			}
-		});
+		this.logger.info(process.env.YOUTUBE_COOKIE);
+
+		// await this.player.extractors.loadMulti(DefaultExtractors);
+		// await this.player.extractors.register(YoutubeiExtractor, {
+		// 	cookie: process.env.YOUTUBE_COOKIE,
+		// 	// generateWithPoToken: true,
+		// 	streamOptions: {
+		// 		useClient: 'IOS'
+		// 	},
+		// 	disablePlayer: true,
+		// 	ignoreSignInErrors: true
+		// });
+
+		await this.player.extractors.register(CustomYoutubeExtractor, {});
 
 		const loaded = this.player.extractors.store.size;
 		this.logger.info(`Loaded ${loaded} extractors into Discord Player's extractor store.`);
