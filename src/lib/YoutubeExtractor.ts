@@ -71,10 +71,9 @@ export class CustomYoutubeExtractor extends BaseExtractor {
 		if (!this.yt) throw new Error('YouTube extractor not initialized.');
 
 		const videoId = this.extractVideoId(info.url);
-		const tempFilePath = join(this.tempDir, `${videoId}-${Date.now()}.webm`);
-		try {
-			// 고유한 파일명 생성 (충돌 방지)
+		const tempFilePath = join(this.tempDir, `${videoId}.webm`);
 
+		if (!existsSync(tempFilePath)) {
 			console.log(`[CustomYT] Downloading: ${videoId}`);
 
 			const webStream = await this.yt.download(videoId, {
@@ -99,20 +98,23 @@ export class CustomYoutubeExtractor extends BaseExtractor {
 
 			console.log(`[CustomYT] Download finished: ${tempFilePath}`);
 
+			const stats = statSync(tempFilePath);
+			if (stats.size === 0) {
+				throw new Error('[CustomYT] Saved file is empty (0 bytes)');
+			}
+			console.log(`[CustomYT] [DEBUG] File saved. Size: ${stats.size} bytes`);
+		}
+
+		try {
 			// 파일이 실제로 존재하는지 최종 확인
 			if (!existsSync(tempFilePath)) {
 				throw new Error(`[CustomYT] File does not exist: ${tempFilePath}`);
-			}
-			const stats = statSync(tempFilePath);
-			console.log(`[CustomYT] [DEBUG] File saved. Size: ${stats.size} bytes`);
-
-			if (stats.size === 0) {
-				throw new Error('[CustomYT] Saved file is empty (0 bytes)');
 			}
 
 			// 읽기 스트림 생성
 			const readable = createReadStream(tempFilePath);
 
+			// 정리 함수
 			const cleanup = () => {
 				if (existsSync(tempFilePath)) {
 					try {
@@ -128,7 +130,10 @@ export class CustomYoutubeExtractor extends BaseExtractor {
 			readable.on('end', cleanup);
 			readable.on('error', cleanup);
 
-			return readable;
+			return {
+				$fmt: 'arbitrary',
+				stream: readable
+			};
 		} catch (err: any) {
 			console.error('[CustomYT] Stream Error:', err.message);
 			if (existsSync(tempFilePath)) unlinkSync(tempFilePath);
