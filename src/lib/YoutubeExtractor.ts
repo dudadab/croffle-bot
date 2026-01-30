@@ -1,10 +1,23 @@
 import { BaseExtractor, ExtractorStreamable, Track } from 'discord-player';
+import { createReadStream, createWriteStream, existsSync, mkdirSync, statSync, unlinkSync } from 'node:fs';
+import { join } from 'node:path';
+import { Readable } from 'node:stream';
 
 export class CustomYoutubeExtractor extends BaseExtractor {
 	private yt: any | null = null;
+	private readonly tempDir = join(process.cwd(), 'dist/croffle-bot-streams');
+
+	public static override get identifier() {
+		return 'custom-youtube';
+	}
 
 	public override async activate() {
 		this.protocols = ['youtube', 'youtubeVideo'];
+
+		// 임시 디렉토리 생성
+		if (!existsSync(this.tempDir)) {
+			mkdirSync(this.tempDir, { recursive: true });
+		}
 
 		this.yt = await (
 			await import('youtubei.js')
@@ -12,11 +25,7 @@ export class CustomYoutubeExtractor extends BaseExtractor {
 			cookie: process.env.YOUTUBE_COOKIE
 		});
 
-		console.log('[CustomYT] Extractor activated with ANDROID client');
-	}
-
-	public static override get identifier() {
-		return 'custom-youtube';
+		console.log('[CustomYT] Extractor activated (Local Temp File Mode)');
 	}
 
 	public override async validate(query: string) {
@@ -29,7 +38,7 @@ export class CustomYoutubeExtractor extends BaseExtractor {
 			console.log(`[CustomYT] Fetching info for video: ${videoId}`);
 
 			// ANDROID 클라이언트로 정보 가져오기
-			const info = await this.yt.getInfo(videoId, { client: 'ANDROID' });
+			const info = await this.yt.getBasicInfo(videoId, { client: 'ANDROID' });
 
 			const videoDetails = info.basic_info;
 
@@ -59,33 +68,71 @@ export class CustomYoutubeExtractor extends BaseExtractor {
 	}
 
 	public override async stream(info: Track): Promise<ExtractorStreamable> {
-		if (!this.yt) {
-			throw new Error('YouTube client not initialized');
-		}
+		if (!this.yt) throw new Error('YouTube extractor not initialized.');
 
+		const videoId = this.extractVideoId(info.url);
+		const tempFilePath = join(this.tempDir, `${videoId}-${Date.now()}.webm`);
 		try {
-			const videoId = this.extractVideoId(info.url);
-			console.log(`[CustomYT] Creating stream for: ${videoId}`);
+			// 고유한 파일명 생성 (충돌 방지)
 
-			// 메타데이터에서 정보 재사용 또는 새로 가져오기
-			const ytInfo = info.metadata || (await this.yt.getInfo(videoId, { client: 'ANDROID' }));
+			console.log(`[CustomYT] Downloading: ${videoId}`);
 
-			const formats = ytInfo.streaming_data?.adaptive_formats || [];
-			const audioFormat = formats.filter((f: any) => f.has_audio && !f.has_video).sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+			const webStream = await this.yt.download(videoId, {
+				type: 'audio',
+				quality: 'best',
+				format: 'webm', // opus 코덱을 포함한 webm이 디스코드 처리에 가장 빠름
+				client: 'ANDROID'
+			});
 
-			if (!audioFormat?.url) {
-				throw new Error('No audio stream URL found');
+			const fs = createWriteStream(tempFilePath);
+			const nodeReadable = Readable.fromWeb(webStream as any);
+
+			// 파이핑 및 완료 대기
+			await new Promise<void>((resolve, reject) => {
+				nodeReadable.pipe(fs);
+				fs.on('finish', () => {
+					fs.close();
+					resolve();
+				});
+				fs.on('error', reject);
+			});
+
+			console.log(`[CustomYT] Download finished: ${tempFilePath}`);
+
+			// 파일이 실제로 존재하는지 최종 확인
+			if (!existsSync(tempFilePath)) {
+				throw new Error(`[CustomYT] File does not exist: ${tempFilePath}`);
+			}
+			const stats = statSync(tempFilePath);
+			console.log(`[CustomYT] [DEBUG] File saved. Size: ${stats.size} bytes`);
+
+			if (stats.size === 0) {
+				throw new Error('[CustomYT] Saved file is empty (0 bytes)');
 			}
 
-			console.log(`[CustomYT] Stream URL found, itag: ${audioFormat.itag}`);
+			// 읽기 스트림 생성
+			const readable = createReadStream(tempFilePath);
 
-			return {
-				stream: audioFormat.url,
-				$fmt: 'arbitrary'
+			const cleanup = () => {
+				if (existsSync(tempFilePath)) {
+					try {
+						unlinkSync(tempFilePath);
+						console.log(`[CustomYT] Temp file deleted.`);
+					} catch (e) {
+						console.error(`[CustomYT] Error deleting temp file:`, e);
+					}
+				}
 			};
-		} catch (error: any) {
-			console.error('[CustomYT] Error in stream:', error.message);
-			throw error;
+
+			// 스트림 종료 시 정리
+			readable.on('end', cleanup);
+			readable.on('error', cleanup);
+
+			return readable;
+		} catch (err: any) {
+			console.error('[CustomYT] Stream Error:', err.message);
+			if (existsSync(tempFilePath)) unlinkSync(tempFilePath);
+			throw err;
 		}
 	}
 

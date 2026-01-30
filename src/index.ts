@@ -29,8 +29,8 @@ export class CustomClient extends SapphireClient {
 
 		this.player = new Player(this, {
 			skipFFmpeg: false,
-			connectionTimeout: 10000,
-			probeTimeout: 10000
+			connectionTimeout: 30000,
+			probeTimeout: 0
 		});
 
 		this.player.events.on('debug', (_, message) => {
@@ -47,8 +47,6 @@ export class CustomClient extends SapphireClient {
 	}
 
 	public override async login(token?: string) {
-		this.logger.info(process.env.YOUTUBE_COOKIE);
-
 		// await this.player.extractors.loadMulti(DefaultExtractors);
 		// await this.player.extractors.register(YoutubeiExtractor, {
 		// 	cookie: process.env.YOUTUBE_COOKIE,

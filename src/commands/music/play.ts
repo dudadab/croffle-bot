@@ -40,7 +40,11 @@ export class UserCommand extends Command {
 
 			const { track, queue } = await player.play(voiceChannel, query, {
 				nodeOptions: {
-					metadata: message
+					metadata: message,
+					bufferingTimeout: 30000,
+					connectionTimeout: 30000,
+					leaveOnStop: true,
+					leaveOnEmpty: true
 				}
 			});
 
