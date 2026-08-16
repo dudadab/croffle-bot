@@ -5,6 +5,7 @@ import type { Message } from 'discord.js';
 
 @ApplyOptions<Command.Options>({
   description: 'Joins the voice channel you are currently in',
+  preconditions: ['MainOnly', 'CommandChannel'],
 })
 export class UserCommand extends Command {
   public override async messageRun(message: Message): Promise<void> {
@@ -32,8 +33,7 @@ export class UserCommand extends Command {
         await message.channel.send('Joined your voice channel successfully!');
       }
     } catch (error) {
-      // oxlint-disable-next-line no-console
-      console.error('Error joining voice channel:', error);
+      this.container.logger.error('Error joining voice channel:', error);
       await message.reply('Sorry, I could not join your voice channel.');
     }
   }

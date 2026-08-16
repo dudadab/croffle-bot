@@ -9,6 +9,7 @@ import {
 
 @ApplyOptions<Command.Options>({
   description: 'ping pong',
+  preconditions: ['CommandChannel'],
 })
 export class UserCommand extends Command {
   // Register Chat Input and Context Menu command

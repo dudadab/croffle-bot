@@ -4,8 +4,9 @@ import { useQueue } from 'discord-player';
 import type { Message } from 'discord.js';
 
 @ApplyOptions<Command.Options>({
-  description: '현재 대기열의 모든 곡을 삭제합니다.',
+  description: 'Clear all tracks from the queue',
   aliases: ['c'],
+  preconditions: ['MainOnly', 'CommandChannel'],
 })
 export class UserCommand extends Command {
   public override async messageRun(message: Message) {
@@ -15,25 +16,25 @@ export class UserCommand extends Command {
 
     const memberVoiceChannelId = message.member?.voice.channelId;
     if (!memberVoiceChannelId) {
-      await message.reply('❌ 음성 채널에 먼저 입장해주세요.');
+      await message.reply('Join a voice channel first.');
       return;
     }
 
     const botVoiceChannelId = message.guild?.members.me?.voice.channelId;
 
     if (botVoiceChannelId && botVoiceChannelId !== memberVoiceChannelId) {
-      await message.reply('❌ 봇이 다른 음성 채널에 있습니다. 같은 채널에 입장해주세요.');
+      await message.reply('I am in a different voice channel. Join the same channel first.');
       return;
     }
 
     const queue = useQueue(message.guildId);
 
     if (!queue || queue.tracks.size === 0) {
-      await message.reply('❌ 현재 대기열에 곡이 없습니다.');
+      await message.reply('The queue is empty.');
       return;
     }
 
     queue.tracks.clear();
-    await message.reply(`✅ 대기열이 비워졌습니다.`);
+    await message.reply('Queue cleared.');
   }
 }

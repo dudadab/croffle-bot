@@ -23,7 +23,7 @@
     // Best Practices
     "curly": "error",
     "eqeqeq": "error",
-    "no-console": "warn",
+    "no-console": "error",
     "no-debugger": "warn",
     "no-unneeded-ternary": "error",
     "no-useless-return": "error",
@@ -68,7 +68,7 @@
       "error",
       {
         "cases": {
-          "kebabCase": true,
+          "kebabCase": true
         },
         "ignore": ["\\.d\\.ts$"]
       }

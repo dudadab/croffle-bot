@@ -27,8 +27,8 @@ Sapphire 프레임워크와 `discord-player`를 기반으로 한 Discord 봇 **P
 - **Framework:** [Sapphire](https://sapphirejs.dev/)
 - **Libraries:** [discord.js v14](https://discord.js.org/), [@discordjs/voice](https://github.com/discordjs/voice)
 - **Music Engine:** [discord-player v7](https://discord-player.js.org/)
-- **Package Manager:** Yarn 4.12.0 (Berry)
-- **Audio Processing:** ffmpeg, yt-dlp
+- **Package Manager:** Yarn 4.18.0 (Berry)
+- **Audio Processing:** ffmpeg (`ffmpeg-static` 번들, 시스템 PATH의 ffmpeg도 가능)
 - **Infrastructure:** Docker, Docker Compose
 
 ---
@@ -46,19 +46,23 @@ cd pipit-hub
 
 - **필수 프로그램 설치**
   - **Node.js 18+:** [Official](https://nodejs.org/ko) 에서 설치
-  - **yt-dlp:** `winget`, `apt`, `dnf`를 활용하여 설치
   - **ffmpeg:** `winget`, `apt`, `dnf`를 활용하여 설치
 - `.env` **파일 설정**
-  - 프로젝트 루트에서 `.env`를 생성하여 다음 내용을 추가
+  - 프로젝트 루트에 `.env` (또는 개발용 `.env.development.local`)를 두고 다음을 설정합니다.
 
 ```ini
 BOT_TOKEN="YOUR_DISCORD_BOT_TOKEN_HERE"
-CLIENT_ID="YOUR_BOT_CLIENT_ID_HERE"
+ROLE="main" # main | edge (기본값 main)
 
-GUILD_ID="YOUR_TEST_SERVER_ID_HERE" # (Optional) 봇을 테스트할 특정 서버 ID
+# main 전용 (선택)
+YOUTUBE_COOKIE="YOUR_YOUTUBE_COOKIE_HERE"
+
+# 메시지 명령 허용 채널 (선택; 미설정 시 모든 채널)
+COMMAND_CHANNEL_ID="YOUR_CHANNEL_ID_HERE"
 ```
 
 > 노드별로 Discord 토큰을 분리하고, 외부(edge) 노드에는 최소 권한·최소 시크릿만 두는 것을 권장합니다.
+> `yarn start:dev`는 `--env-file=.env.development.local`을 사용합니다.
 
 - **개발 환경 설정**
 

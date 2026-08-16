@@ -5,6 +5,7 @@ import type { Message } from 'discord.js';
 
 @ApplyOptions<Command.Options>({
   description: 'Skip the currently playing track',
+  preconditions: ['MainOnly', 'CommandChannel'],
 })
 export class UserCommand extends Command {
   public override async messageRun(message: Message): Promise<void> {
@@ -33,8 +34,8 @@ export class UserCommand extends Command {
     const success = queue.node.skip();
     if (success) {
       return `Skipped: **${currentTrack.title}**`;
-    } else {
-      return 'Failed to skip the track.';
     }
+
+    return 'Failed to skip the track.';
   }
 }

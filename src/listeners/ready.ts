@@ -3,6 +3,8 @@ import { Listener } from '@sapphire/framework';
 import type { StoreRegistryValue } from '@sapphire/pieces';
 import { blue, gray, green, magenta, magentaBright, white, yellow } from 'colorette';
 
+import { getEnv } from '../lib/env';
+
 const dev = process.env.NODE_ENV !== 'production';
 
 @ApplyOptions<Listener.Options>({ once: true })
@@ -16,23 +18,16 @@ export class UserEvent extends Listener {
 
   private printBanner() {
     const success = green('+');
-
     const llc = dev ? magentaBright : white;
     const blc = dev ? magenta : blue;
-
-    const line01 = llc('');
-    const line02 = llc('');
-    const line03 = llc('');
-
-    // Offset Pad
+    const { role } = getEnv();
     const pad = ' '.repeat(7);
 
-    // oxlint-disable-next-line no-console
-    console.info(
+    this.container.logger.info(
       String.raw`
-${line01} ${pad}${blc('1.0.0')}
-${line02} ${pad}[${success}] Gateway
-${line03}${dev ? ` ${pad}${blc('<')}${llc('/')}${blc('>')} ${llc('DEVELOPMENT MODE')}` : ''}
+${llc('')} ${pad}${blc('pipit-hub')} ${blc('1.0.0')}
+${llc('')} ${pad}[${success}] Gateway  ROLE=${llc(role)}
+${dev ? ` ${pad}${blc('<')}${llc('/')}${blc('>')} ${llc('DEVELOPMENT MODE')}` : ''}
 		`.trim(),
     );
   }

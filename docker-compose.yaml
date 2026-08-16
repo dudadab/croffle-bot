@@ -1,6 +1,6 @@
 services:
-  croffle-bot:
-    image: croffle-bot:latest
+  pipit-hub:
+    image: pipit-hub:latest
     build: .
     env_file:
       - .env

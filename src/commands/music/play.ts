@@ -5,7 +5,8 @@ import type { Message } from 'discord.js';
 
 @ApplyOptions<Command.Options>({
   description: 'Plays music in your current voice channel',
-  aliases: ['p'], // Adding an alias commands for the play command
+  aliases: ['p'],
+  preconditions: ['MainOnly', 'CommandChannel'],
 })
 export class UserCommand extends Command {
   public override async messageRun(message: Message, args: Args) {
@@ -24,12 +25,11 @@ export class UserCommand extends Command {
       return message.reply('You need to be in a voice channel to use this command.');
     }
 
-    // URL parsing and search query handling
     const query = await args.rest('string').catch(() => null);
 
     if (!query) {
       return message.reply(
-        'You need to provide a search term or URL to play music.\nExamples:\n`!play never gonna give you up`\n`!play <YouTube URL>`',
+        'You need to provide a YouTube URL to play music.\nExample: `!play <YouTube URL>`',
       );
     }
 
@@ -52,13 +52,19 @@ export class UserCommand extends Command {
         return feedbackMessage.edit(
           `\`${track.title}\` has been added to the queue! (position: ${queue.tracks.size})`,
         );
-      } else {
-        return feedbackMessage.edit(`\`${track.title}\` is now playing!`);
       }
+
+      return feedbackMessage.edit(`\`${track.title}\` is now playing!`);
     } catch (error) {
-      // oxlint-disable-next-line no-console
-      console.error('Error playing music:', error);
-      return message.channel.send(`Error occurred while trying to play music: ${error}`);
+      this.container.logger.error('Error playing music:', error);
+      const detail =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+            ? error
+            : 'Unknown error';
+      const content = `Error occurred while trying to play music: ${detail}`.slice(0, 1900);
+      return message.channel.send(content);
     }
   }
 }

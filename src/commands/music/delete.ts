@@ -4,7 +4,9 @@ import { useQueue } from 'discord-player';
 import type { Message } from 'discord.js';
 
 @ApplyOptions<Command.Options>({
-  description: 'Skip the currently playing track',
+  description: 'Remove a track from the queue by 1-based index',
+  aliases: ['remove', 'rm'],
+  preconditions: ['MainOnly', 'CommandChannel'],
 })
 export class UserCommand extends Command {
   public override async messageRun(message: Message, args: Args): Promise<void> {
@@ -22,7 +24,7 @@ export class UserCommand extends Command {
 
     const idx = await args.pick('integer').catch(() => null);
     if (idx === null) {
-      return 'Please provide a valid track index to skip.';
+      return 'Please provide a valid track index to remove.';
     }
 
     const queue = useQueue(guildId);

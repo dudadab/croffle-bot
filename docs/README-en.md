@@ -27,8 +27,8 @@ One codebase runs in role-based modes (e.g. `ROLE=main` / `ROLE=edge`): a main h
 - **Framework:** [Sapphire](https://sapphirejs.dev/)
 - **Libraries:** [discord.js v14](https://discord.js.org/), [@discordjs/voice](https://github.com/discordjs/voice)
 - **Music Engine:** [discord-player v7](https://discord-player.js.org/)
-- **Package Manager:** Yarn 4.12.0 (Berry)
-- **Audio Processing:** ffmpeg, yt-dlp
+- **Package Manager:** Yarn 4.18.0 (Berry)
+- **Audio Processing:** ffmpeg (via bundled `ffmpeg-static`, or system PATH)
 - **Infrastructure:** Docker, Docker Compose
 
 ---
@@ -46,19 +46,23 @@ cd pipit-hub
 
 - **Install required programs**
   - **Node.js 18+:** [Official Website](https://nodejs.org/)
-  - **yt-dlp:** Install with `winget`, `apt`, or `dnf`
   - **ffmpeg:** Install with `winget`, `apt`, or `dnf`
 - **Configure `.env`**
-  - Create a `.env` file in the project root:
+  - Create a root `.env` (or `.env.development.local` for `yarn start:dev`):
 
 ```ini
 BOT_TOKEN="YOUR_DISCORD_BOT_TOKEN_HERE"
-CLIENT_ID="YOUR_BOT_CLIENT_ID_HERE"
+ROLE="main" # main | edge (default main)
 
-GUILD_ID="YOUR_TEST_SERVER_ID_HERE" # (Optional) Specific server ID for testing
+# main only (optional)
+YOUTUBE_COOKIE="YOUR_YOUTUBE_COOKIE_HERE"
+
+# optional; when set, message commands are limited to this channel
+COMMAND_CHANNEL_ID="YOUR_CHANNEL_ID_HERE"
 ```
 
 > Prefer separate Discord tokens per node, and keep edge nodes on least privilege / minimal secrets.
+> `yarn start:dev` loads `--env-file=.env.development.local`.
 
 - **Setup**
 
