@@ -1,0 +1,9 @@
+{
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "eslint.enable": false,
+  "prettier.enable": false,
+  "editor.tabSize": 2,
+  "oxc.enable": true,
+  "editor.formatOnSave": true,
+  "material-icon-theme.activeIconPack": "vue_vuex"
+}

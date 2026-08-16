@@ -6,18 +6,14 @@
     "node": true,
     "es2024": true
   },
-  "globals": {
-    "croffle": "readonly"
-  },
   "ignorePatterns": [
     "**/dist/**",
     "**/out/**",
     "**/node_modules/**",
     "**/build/**",
-    "**/*.cjs",
     "**/coverage/**",
-    "packages/cli/templates/**",
-    "apps/desktop/src/renderer/src/components/ui/**"
+    "**/.yarn/**",
+    "**/*.cjs"
   ],
   "categories": {
     "correctness": "error",
@@ -71,7 +67,9 @@
     "unicorn/filename-case": [
       "error",
       {
-        "case": "kebabCase",
+        "cases": {
+          "kebabCase": true,
+        },
         "ignore": ["\\.d\\.ts$"]
       }
     ],
@@ -150,17 +148,16 @@
       }
     },
     {
-      "files": ["packages/cli/**/*.ts"],
+      "files": ["**/scripts/**/*.{ts,js}", "**/src/test/**/*.{ts,js}"],
       "rules": {
-        "no-console": "off",
-        "no-underscore-dangle": "off",
-        "no-unused-vars": "off"
+        "no-console": "off"
       }
     },
     {
-      "files": ["packages/types/**/*.d.ts"],
-      "rules": {
-        "max-lines": "off"
+      "files": ["**/apps/dashboard/**/*.{vue,ts,tsx}"],
+      "env": {
+        "browser": true,
+        "node": false
       }
     }
   ]
