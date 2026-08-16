@@ -1,5 +1,13 @@
 import { BaseExtractor, ExtractorStreamable, Track } from 'discord-player';
-import { createReadStream, createWriteStream, existsSync, mkdirSync, statSync, unlinkSync } from 'node:fs';
+import { FFmpeg } from 'prism-media';
+import {
+	createReadStream,
+	createWriteStream,
+	existsSync,
+	mkdirSync,
+	statSync
+	//unlinkSync
+} from 'node:fs';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 
@@ -74,71 +82,69 @@ export class CustomYoutubeExtractor extends BaseExtractor {
 		const tempFilePath = join(this.tempDir, `${videoId}.webm`);
 
 		if (!existsSync(tempFilePath)) {
-			console.log(`[CustomYT] Downloading: ${videoId}`);
-
-			const webStream = await this.yt.download(videoId, {
-				type: 'audio',
-				quality: 'best',
-				format: 'webm', // opus 코덱을 포함한 webm이 디스코드 처리에 가장 빠름
-				client: 'ANDROID'
-			});
-
-			const fs = createWriteStream(tempFilePath);
-			const nodeReadable = Readable.fromWeb(webStream as any);
-
-			// 파이핑 및 완료 대기
-			await new Promise<void>((resolve, reject) => {
-				nodeReadable.pipe(fs);
-				fs.on('finish', () => {
-					fs.close();
-					resolve();
-				});
-				fs.on('error', reject);
-			});
-
-			console.log(`[CustomYT] Download finished: ${tempFilePath}`);
-
-			const stats = statSync(tempFilePath);
-			if (stats.size === 0) {
-				throw new Error('[CustomYT] Saved file is empty (0 bytes)');
-			}
-			console.log(`[CustomYT] [DEBUG] File saved. Size: ${stats.size} bytes`);
+			await this.downloadAudioFile(videoId, tempFilePath);
 		}
 
-		try {
-			// 파일이 실제로 존재하는지 최종 확인
-			if (!existsSync(tempFilePath)) {
-				throw new Error(`[CustomYT] File does not exist: ${tempFilePath}`);
-			}
+		const stats = statSync(tempFilePath);
+		console.log(`[CustomYT] File ready (${stats.size} bytes)`);
+		console.log(`[CustomYT] Creating FFmpeg transcoder stream`);
 
-			// 읽기 스트림 생성
-			const readable = createReadStream(tempFilePath);
+		// prism-media의 FFmpeg를 사용하여 변환
+		const transcoder = new FFmpeg({
+			args: ['-analyzeduration', '0', '-loglevel', '0', '-f', 's16le', '-ar', '48000', '-ac', '2']
+		});
 
-			// 정리 함수
-			const cleanup = () => {
-				if (existsSync(tempFilePath)) {
-					try {
-						unlinkSync(tempFilePath);
-						console.log(`[CustomYT] Temp file deleted.`);
-					} catch (e) {
-						console.error(`[CustomYT] Error deleting temp file:`, e);
-					}
-				}
-			};
+		// 파일 읽기 스트림
+		const input = createReadStream(tempFilePath);
 
-			// 스트림 종료 시 정리
-			readable.on('end', cleanup);
-			readable.on('error', cleanup);
+		// 에러 핸들링
+		input.on('error', (err) => {
+			console.error('[CustomYT] Input stream error:', err);
+		});
 
-			return {
-				$fmt: 'arbitrary',
-				stream: readable
-			};
-		} catch (err: any) {
-			console.error('[CustomYT] Stream Error:', err.message);
-			if (existsSync(tempFilePath)) unlinkSync(tempFilePath);
-			throw err;
-		}
+		transcoder.on('error', (err) => {
+			console.error('[CustomYT] FFmpeg error:', err);
+		});
+
+		transcoder.on('spawn', () => {
+			console.log('[CustomYT] FFmpeg process spawned');
+		});
+
+		transcoder.on('close', (code: any) => {
+			console.log(`[CustomYT] FFmpeg closed with code: ${code}`);
+		});
+
+		// 파일 스트림을 FFmpeg로 파이핑
+		input.pipe(transcoder);
+
+		// FFmpeg transcoder 스트림 반환
+		return transcoder;
+	}
+
+	private async downloadAudioFile(videoId: string, tempFilePath: string): Promise<void> {
+		console.log(`[CustomYT] Downloading: ${videoId}`);
+
+		const webStream = await this.yt.download(videoId, {
+			type: 'audio',
+			quality: 'best',
+			format: 'webm', // opus 코덱을 포함한 webm이 디스코드 처리에 가장 빠름
+			client: 'ANDROID'
+		});
+
+		const fs = createWriteStream(tempFilePath);
+		const nodeReadable = Readable.fromWeb(webStream as any);
+
+		// 파이핑 및 완료 대기
+		await new Promise<void>((resolve, reject) => {
+			nodeReadable.pipe(fs);
+			fs.on('finish', () => {
+				fs.close();
+				resolve();
+			});
+			fs.on('error', reject);
+		});
+
+		console.log(`[CustomYT] Download finished: ${tempFilePath}`);
 	}
 
 	private extractVideoId(url: string): string {

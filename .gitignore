@@ -33,3 +33,4 @@ package-lock.json
 .stignore
 .stfolder
 .stversions/
+.ai/
