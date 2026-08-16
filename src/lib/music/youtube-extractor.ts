@@ -1,9 +1,18 @@
-import { createWriteStream, existsSync, mkdirSync, statSync, unlinkSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import {
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 
 import { container } from '@sapphire/framework';
 import { BaseExtractor, type ExtractorInfo, type ExtractorStreamable, Track } from 'discord-player';
+import ffmpegPath from 'ffmpeg-static';
 
 import { getEnv } from '../env';
 
@@ -104,19 +113,71 @@ export class CustomYoutubeExtractor extends BaseExtractor {
       throw new Error('YouTube extractor not initialized.');
     }
 
+    if (!ffmpegPath) {
+      throw new Error('ffmpeg-static binary path is missing');
+    }
+
     try {
       const videoId = this.extractVideoId(info.url);
-      const tempFilePath = join(this.tempDir, `${videoId}.audio`);
+      const tempFilePath = join(this.tempDir, `${videoId}.m4a`);
 
       if (!this.isUsableCache(tempFilePath)) {
-        await this.downloadAudioFile(videoId, tempFilePath);
+        const legacyPath = join(this.tempDir, `${videoId}.audio`);
+        if (this.isUsableCache(legacyPath)) {
+          renameSync(legacyPath, tempFilePath);
+        } else {
+          await this.downloadAudioFile(videoId, tempFilePath);
+        }
       }
 
       const stats = statSync(tempFilePath);
       container.logger.debug(`[CustomYT] Stream ready (${stats.size} bytes): ${tempFilePath}`);
 
-      // Return a path so discord-player runs its own FFmpeg demux/decode.
-      return tempFilePath;
+      // Decode locally to PCM. Returning a file path makes discord-player add HTTP
+      // `-reconnect*` flags that abort local files almost immediately on Windows.
+      const ffmpeg = spawn(
+        ffmpegPath,
+        [
+          '-hide_banner',
+          '-loglevel',
+          'error',
+          '-i',
+          tempFilePath,
+          '-analyzeduration',
+          '0',
+          '-f',
+          's16le',
+          '-ar',
+          '48000',
+          '-ac',
+          '2',
+          'pipe:1',
+        ],
+        { windowsHide: true },
+      );
+
+      ffmpeg.stderr.on('data', (chunk: Buffer) => {
+        container.logger.debug(`[CustomYT][ffmpeg] ${chunk.toString().trim()}`);
+      });
+
+      ffmpeg.on('error', (error) => {
+        container.logger.error('[CustomYT][ffmpeg] process error:', error);
+      });
+
+      ffmpeg.on('close', (code) => {
+        if (code && code !== 0) {
+          container.logger.warn(`[CustomYT][ffmpeg] exited with code ${code}`);
+        }
+      });
+
+      if (!ffmpeg.stdout) {
+        throw new Error('ffmpeg stdout is unavailable');
+      }
+
+      return {
+        stream: ffmpeg.stdout,
+        $fmt: 'pcm',
+      };
     } catch (error) {
       container.logger.error('[CustomYT] Error in stream:', error);
       throw error;
@@ -150,7 +211,6 @@ export class CustomYoutubeExtractor extends BaseExtractor {
       try {
         container.logger.info(`[CustomYT] Downloading ${videoId} via ${client}`);
 
-        // format: 'any' — ANDROID often has no webm audio; forcing webm causes "No matching formats".
         const webStream = await this.yt.download(videoId, {
           type: 'audio',
           quality: 'best',

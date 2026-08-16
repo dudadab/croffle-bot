@@ -45,6 +45,9 @@ export class UserCommand extends Command {
           connectionTimeout: 30000,
           leaveOnStop: true,
           leaveOnEmpty: true,
+          leaveOnEnd: true,
+          leaveOnEmptyCooldown: 30_000,
+          leaveOnEndCooldown: 30_000,
         },
       });
 

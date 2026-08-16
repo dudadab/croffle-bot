@@ -27,9 +27,9 @@ export class CustomClient extends SapphireClient {
 
     if (config.isMain) {
       this.player = new Player(this, {
-        skipFFmpeg: false,
+        // We already decode YouTube audio to PCM in CustomYoutubeExtractor.
+        skipFFmpeg: true,
         connectionTimeout: 30000,
-        // Probe often fails on cached YouTube audio containers; let FFmpeg handle decode.
         probeTimeout: 0,
       });
 
