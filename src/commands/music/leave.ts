@@ -4,36 +4,35 @@ import { getVoiceConnection, useQueue } from 'discord-player';
 import type { Message } from 'discord.js';
 
 @ApplyOptions<Command.Options>({
-	description: 'Leaves the voice channel and stops music playback'
+  description: 'Leaves the voice channel and stops music playback',
 })
 export class UserCommand extends Command {
-	public override async messageRun(message: Message) {
-		const result = this.doLeave(message.guildId);
-		if (message.channel.isSendable()) {
-			return message.channel.send(result);
-		}
-		return;
-	}
+  public override async messageRun(message: Message): Promise<void> {
+    const result = this.doLeave(message.guildId);
+    if (message.channel.isSendable()) {
+      await message.channel.send(result);
+    }
+  }
 
-	private doLeave(guildId: string | null): string {
-		if (!guildId) {
-			return 'No guild ID provided';
-		}
+  private doLeave(guildId: string | null): string {
+    if (!guildId) {
+      return 'No guild ID provided';
+    }
 
-		const queue = useQueue(guildId);
+    const queue = useQueue(guildId);
 
-		const connection = getVoiceConnection(guildId);
+    const connection = getVoiceConnection(guildId);
 
-		if (!queue && !connection) {
-			return 'No active music session found in this server.';
-		}
+    if (!queue && !connection) {
+      return 'No active music session found in this server.';
+    }
 
-		if (queue) {
-			queue.delete();
-		} else if (connection) {
-			connection.destroy();
-		}
+    if (queue) {
+      queue.delete();
+    } else if (connection) {
+      connection.destroy();
+    }
 
-		return 'Left the voice channel successfully.';
-	}
+    return 'Left the voice channel successfully.';
+  }
 }
