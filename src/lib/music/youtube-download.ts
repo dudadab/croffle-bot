@@ -10,14 +10,14 @@ import { downloadSabrAudio } from './youtube-sabr.js';
 // no `url`. These still sometimes expose progressive URLs. Order is "most likely
 // to still have a cipher/url" first so we do not wait on SABR unless we must.
 const PROGRESSIVE_CLIENTS: Types.InnerTubeClient[] = [
-  'TV',
+  'ANDROID',
   'MWEB',
-  'YTMUSIC',
   'IOS',
+  'TV',
+  'YTMUSIC',
   'TV_EMBEDDED',
   'WEB_EMBEDDED',
   'WEB_CREATOR',
-  'ANDROID',
 ];
 
 type DirectFormat = {
@@ -81,12 +81,18 @@ function withPoToken(url: string, poToken: string | undefined): string {
   return parsed.toString();
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 async function downloadProgressiveAudio(
   innertube: Innertube,
   videoId: string,
   filePath: string,
   poToken: string | undefined,
 ): Promise<boolean> {
+  const failures: string[] = [];
+
   for (const client of PROGRESSIVE_CLIENTS) {
     try {
       container.logger.info(`[CustomYT] Trying progressive download via ${client}`);
@@ -99,7 +105,7 @@ async function downloadProgressiveAudio(
         const total =
           (info.streaming_data?.formats?.length ?? 0) +
           (info.streaming_data?.adaptive_formats?.length ?? 0);
-        container.logger.warn(`[CustomYT] ${client} has no URL formats (total=${total})`);
+        failures.push(`${client}: no URL formats (total=${total})`);
         continue;
       }
 
@@ -117,11 +123,14 @@ async function downloadProgressiveAudio(
       );
       return true;
     } catch (error) {
-      container.logger.warn(`[CustomYT] Progressive ${client} failed:`, error);
+      failures.push(`${client}: ${errorMessage(error)}`);
       removeIfExists(filePath);
     }
   }
 
+  container.logger.warn(
+    `[CustomYT] Progressive download failed on all clients: ${failures.join('; ')}`,
+  );
   return false;
 }
 
