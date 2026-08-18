@@ -139,12 +139,43 @@ export async function downloadSabrAudio(
       });
   });
 
-  const { audioStream, videoStream } = await sabrStream.start({
+  const startOptions = {
     preferWebM: false,
     preferMP4: true,
-    audioQuality: 'AUDIO_QUALITY_MEDIUM',
     enabledTrackTypes: EnabledTrackTypes.AUDIO_ONLY,
-  });
+  };
+  const qualities = ['high', 'medium'] as const;
+
+  let audioStream: ReadableStream<Uint8Array> | undefined;
+  let videoStream: ReadableStream<Uint8Array> | undefined;
+  let selectedQuality: (typeof qualities)[number] | undefined;
+  let lastError: unknown;
+
+  for (const audioQuality of qualities) {
+    try {
+      const started = await sabrStream.start({
+        ...startOptions,
+        audioQuality,
+      });
+      audioStream = started.audioStream;
+      videoStream = started.videoStream;
+      selectedQuality = audioQuality;
+      break;
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes('No suitable formats')) {
+        throw error;
+      }
+      container.logger.warn(`[CustomYT] SABR ${audioQuality} unavailable; trying next quality`);
+    }
+  }
+
+  if (!audioStream || !videoStream || !selectedQuality) {
+    throw lastError instanceof Error ? lastError : new Error('SABR start failed');
+  }
+
+  container.logger.info(`[CustomYT] SABR audio quality=${selectedQuality}`);
 
   try {
     const size = await writeWebStreamToFile(audioStream, filePath);
