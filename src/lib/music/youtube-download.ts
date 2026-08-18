@@ -6,6 +6,9 @@ import { downloadMediaToFile, removeIfExists } from './youtube-media';
 import type { YouTubePoTokenMinter } from './youtube-po-token';
 import { downloadSabrAudio } from './youtube-sabr';
 
+// WHY: default WEB/ANDROID clients often return SABR-only adaptive formats with
+// no `url`. These still sometimes expose progressive URLs. Order is "most likely
+// to still have a cipher/url" first so we do not wait on SABR unless we must.
 const PROGRESSIVE_CLIENTS: Types.InnerTubeClient[] = [
   'TV',
   'MWEB',
@@ -58,6 +61,9 @@ function pickDirectAudioFormat(info: {
   ];
   const withUrl = all.filter((format) => format.has_audio && hasDirectUrl(format));
   const audioOnly = withUrl.filter((format) => !format.has_video);
+  // WHY: `chooseFormat({ type: 'audio', quality: 'best' })` picks the highest
+  // bitrate even when that itag is SABR-only (no url/cipher). We only consider
+  // formats that can actually be fetched, and prefer audio-only over muxed.
   const pool = audioOnly.length > 0 ? audioOnly : withUrl;
   pool.sort((left, right) => right.bitrate - left.bitrate);
   return pool[0];
@@ -68,6 +74,8 @@ function withPoToken(url: string, poToken: string | undefined): string {
     return url;
   }
 
+  // WHY: googlevideo 403s many progressive URLs unless `pot` is on the query.
+  // youtubei.js only auto-appends it when the session itself has po_token.
   const parsed = new URL(url);
   parsed.searchParams.set('pot', poToken);
   return parsed.toString();
@@ -128,6 +136,8 @@ export async function downloadYouTubeAudio(options: {
 
   try {
     await poTokenMinter.init(innertube);
+    // WHY: web clients mint a content-bound token per video id. Binding to
+    // visitorData (session token) is no longer what youtube.com sends.
     poToken = await poTokenMinter.mint(videoId);
     container.logger.info(`[CustomYT] PO token ${poToken ? 'ready' : 'unavailable'}`);
   } catch (error) {
@@ -147,6 +157,8 @@ export async function downloadYouTubeAudio(options: {
     container.logger.info('[CustomYT] Starting SABR audio download');
     await downloadSabrAudio(innertube, videoId, filePath, poToken);
   } catch (error) {
+    // WHY: a failed attempt must not leave a stub m4a, or the next play treats
+    // it as a cache hit and audio cuts off.
     removeIfExists(filePath);
     throw error;
   }

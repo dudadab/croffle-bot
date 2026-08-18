@@ -12,6 +12,9 @@ const MEDIA_HEADERS = {
   referer: 'https://www.youtube.com/',
 } as const;
 
+/**
+ * googlevideo fetch that keeps cookies/UA without rewriting the URL onto InnerTube.
+ */
 export function createMediaFetch(innertube: Innertube): typeof fetch {
   const cookie = innertube.session.cookie;
   const userAgent = innertube.session.context.client.userAgent;
@@ -31,6 +34,9 @@ export function createMediaFetch(innertube: Innertube): typeof fetch {
       headers.set('referer', MEDIA_HEADERS.referer);
     }
 
+    // WHY: `session.http.fetch(url)` prefixes InnerTube (`youtubei/v1/` + url) and
+    // googlevideo then returns 405. `fetch_function` is the raw fetch youtubei.js
+    // already uses for media.
     return innertube.session.http.fetch_function(input, { ...init, headers });
   };
 }
@@ -100,6 +106,8 @@ export async function downloadMediaToFile(
     return statSync(filePath).size;
   }
 
+  // WHY: googlevideo prefers the `range=` query param over an HTTP Range header.
+  // Chunking also avoids buffering a whole m4a in memory on longer tracks.
   let start = 0;
   let first = true;
   while (start < expected) {

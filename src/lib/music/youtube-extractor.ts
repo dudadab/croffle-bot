@@ -1,3 +1,7 @@
+/**
+ * discord-player extractor: resolve metadata, download audio to a local file,
+ * then decode that file to 48 kHz stereo PCM for voice.
+ */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, renameSync, statSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -40,6 +44,7 @@ export class CustomYoutubeExtractor extends BaseExtractor {
     container.logger.info('[CustomYT] Extractor activated (SABR / progressive)');
 
     try {
+      // Warm BotGuard before the first !play so the user is not waiting on VM init.
       await this.poTokenMinter.init(this.yt);
     } catch (error: unknown) {
       container.logger.warn('[CustomYT] PO token warmup failed:', error);
@@ -59,6 +64,8 @@ export class CustomYoutubeExtractor extends BaseExtractor {
       const videoId = extractVideoId(query);
       container.logger.debug(`[CustomYT] Fetching info for video: ${videoId}`);
 
+      // WHY: ANDROID/WEB player calls are more often SABR-only or non-2xx.
+      // MWEB is enough for title/duration; the real client is chosen at download.
       const info = await this.yt.getBasicInfo(videoId, { client: 'MWEB' });
       const videoDetails = info.basic_info;
       container.logger.debug(`[CustomYT] Successfully fetched: ${videoDetails.title}`);
@@ -105,6 +112,8 @@ export class CustomYoutubeExtractor extends BaseExtractor {
           renameSync(legacyPath, tempFilePath);
         } else {
           if (existsSync(tempFilePath)) {
+            // WHY: a previous failed download can leave a too-small .m4a.
+            // Delete it before retrying or we would keep serving the stub.
             unlinkSync(tempFilePath);
           }
           await downloadYouTubeAudio({
@@ -143,6 +152,8 @@ export class CustomYoutubeExtractor extends BaseExtractor {
   }
 
   private decodeToPcm(tempFilePath: string): ExtractorStreamable {
+    // WHY: discord-player is created with skipFFmpeg. If we return an m4a/webm
+    // path, the track ends in ~120ms. We must emit s16le 48kHz stereo ourselves.
     const ffmpeg = spawn(
       ffmpegPath as string,
       [

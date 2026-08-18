@@ -1,3 +1,9 @@
+/**
+ * Innertube session used by the custom YouTube extractor.
+ *
+ * WHY: this package is CJS while youtubei.js is ESM. Type-only imports need
+ * `resolution-mode: import` so tsc does not try to load them as CJS.
+ */
 import type Innertube from 'youtubei.js' with { 'resolution-mode': 'import' };
 import type { Types } from 'youtubei.js' with { 'resolution-mode': 'import' };
 
@@ -28,13 +34,16 @@ export async function createYouTubeSession(): Promise<Innertube> {
     data: Types.BuildScriptResult,
     env: Record<string, Types.VMPrimative>,
   ) => {
-    // youtubei.js needs a JS evaluator to decipher n/sig and SABR URLs.
+    // WHY: youtubei.js extracts n/sig (and SABR URL) decipher functions from the
+    // player JS. Node has no browser VM, so we eval the extracted script ourselves.
     // oxlint-disable-next-line typescript/no-implied-eval
     return new Function(buildPlayerEvalScript(data, env))();
   };
 
   return Innertube.create({
     cookie: getEnv().youtubeCookie,
+    // WHY: BotGuard fingerprints navigator.userAgent. The Innertube session and
+    // the jsdom used to mint PO tokens must look like the same YouTube web client.
     user_agent: await getYouTubeUserAgent(),
   });
 }

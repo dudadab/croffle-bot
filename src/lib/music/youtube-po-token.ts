@@ -1,3 +1,9 @@
+/**
+ * BotGuard WebPO minter for YouTube SABR / progressive `pot=` query params.
+ *
+ * jsdom is not a real browser. The DOM + UA setup below exists so BotGuard's
+ * snapshot is not immediately classified as Node.
+ */
 import { container } from '@sapphire/framework';
 import type { WebPoSignalOutput } from 'bgutils-js/shared-types' with {
   'resolution-mode': 'import',
@@ -43,6 +49,7 @@ async function ensureDomEnvironment(): Promise<void> {
     url: 'https://www.youtube.com/',
     referrer: 'https://www.youtube.com/',
     pretendToBeVisual: true,
+    // WHY: jsdom 30 moved `userAgent` off ConstructorOptions onto `resources`.
     resources: { userAgent },
   });
 
@@ -50,6 +57,9 @@ async function ensureDomEnvironment(): Promise<void> {
   defineGlobal('document', dom.window.document);
   defineGlobal('location', dom.window.location);
   defineGlobal('origin', dom.window.origin);
+  // WHY: Node 21+ already has `globalThis.navigator` (`Node.js/...`). An
+  // `if (!('navigator' in globalThis))` guard never overwrote it, so BotGuard
+  // minted tokens that SABR rejected (protection status 2/3).
   defineGlobal('navigator', dom.window.navigator);
 
   domReady = true;
@@ -186,6 +196,8 @@ export class YouTubePoTokenMinter {
     }
 
     if (!this.initPromise) {
+      // WHY: activate() and stream() can both call init(). Share one in-flight
+      // promise so we do not run BotGuard twice on the first play.
       this.initPromise = this.createMinter(innertube).catch((error: unknown) => {
         this.initPromise = null;
         throw error;
@@ -207,6 +219,8 @@ export class YouTubePoTokenMinter {
     await ensureDomEnvironment();
 
     try {
+      // WHY: BgUtils' current example uses the WAA Create/GenerateIT endpoints,
+      // not Innertube attestation. WAA more often returns inline interpreter JS.
       this.minter = await createMinterFromWaa();
       container.logger.info('[CustomYT] BotGuard PO token minter ready (WAA)');
       return;

@@ -1,3 +1,7 @@
+/**
+ * SABR (Server Adaptive BitRate) audio download via googlevideo.
+ * Used when InnerTube clients no longer return progressive googlevideo URLs.
+ */
 import { container } from '@sapphire/framework';
 import type { ReloadPlaybackContext } from 'googlevideo/protos' with {
   'resolution-mode': 'import',
@@ -7,6 +11,9 @@ import type Innertube from 'youtubei.js' with { 'resolution-mode': 'import' };
 
 import { createMediaFetch, writeWebStreamToFile } from './youtube-media';
 
+// WHY: formats with this xtag (Voice Boost) make the server emit
+// "reload player response" and then `sabr.no_audio_selected`. Filtering them
+// is the workaround from googlevideo#42.
 const VOICE_BOOST_XTAG = 'CgcKAnZiEgEx';
 
 type PlayerResponse = {
@@ -49,6 +56,9 @@ async function fetchPlayerResponse(
     racyCheckOk: true,
   };
 
+  // WHY: `getBasicInfo({ client: 'WEB' })` is a thinner player request and can
+  // return a SABR URL / ustreamer config that googlevideo then rejects. The
+  // official downloader uses watchEndpoint + this playbackContext instead.
   return watchEndpoint.call(innertube.actions, {
     ...extraArgs,
     parse: true,
@@ -110,10 +120,14 @@ export async function downloadSabrAudio(
   });
 
   sabrStream.on('streamProtectionStatusUpdate', (data) => {
+    // WHY: status 1 = token accepted (or not required). 2/3 = PO token rejected
+    // and googlevideo then throws "No media parts or protocol updates received".
     container.logger.warn(`[CustomYT] SABR protection status=${data.status ?? '?'}`);
   });
 
   sabrStream.on('reloadPlayerResponse', (reloadPlaybackContext) => {
+    // WHY: SABR is a conversation. When formats expire or the IP/session changes
+    // the server asks us to reload the player and swap the streaming URL in place.
     void fetchPlayerResponse(innertube, videoId, poToken, reloadPlaybackContext)
       .then((playerResponse) => applyPlayerStreamingConfig(innertube, playerResponse))
       .then((next) => {

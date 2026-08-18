@@ -1,3 +1,7 @@
+/**
+ * Video-id parsing and cache-size helpers shared by the extractor and downloader.
+ */
+
 export function extractVideoId(url: string): string {
   let match = url.match(/youtu\.be\/([\w-]{11})/);
   if (match) {
@@ -49,14 +53,22 @@ export function durationToSeconds(duration: string | number | undefined): number
     return 0;
   }
 
+  // WHY: "1:02:03" and "5:09" both fold left as total = total * 60 + part,
+  // so the same reducer works for mm:ss and hh:mm:ss.
   return parts.reduce((total, part) => total * 60 + part, 0);
 }
 
-/** Floor at ~64 kbps so truncated caches are rejected. */
+/**
+ * Minimum on-disk size before a cached file is treated as complete.
+ * Floor is ~64 kbps so a truncated SABR dump cannot be replayed as a full track.
+ */
 export function minBytesForDuration(seconds: number): number {
   if (seconds <= 0) {
     return 64 * 1024;
   }
 
+  // WHY: failed SABR/progressive runs left ~1MB stubs. `size > 0` treated those
+  // as hits, so the next play cut off early. 8000 bytes/sec ≈ 64 kbps is below
+  // real YouTube audio (~128 kbps) but above those truncated files.
   return Math.max(64 * 1024, Math.floor(seconds * 8000));
 }

@@ -27,7 +27,8 @@ export class CustomClient extends SapphireClient {
 
     if (config.isMain) {
       this.player = new Player(this, {
-        // We already decode YouTube audio to PCM in CustomYoutubeExtractor.
+        // WHY: CustomYoutubeExtractor already emits s16le PCM. Letting
+        // discord-player probe/transcode the local file ended tracks in ~120ms.
         skipFFmpeg: true,
         connectionTimeout: 30000,
         probeTimeout: 0,

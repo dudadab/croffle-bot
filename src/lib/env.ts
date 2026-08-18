@@ -24,22 +24,18 @@ function parseCookieFileToHeader(cookieFileContent: string): string | undefined 
     return undefined;
   }
 
-  // If it's a Netscape cookie file exported by yt-dlp/curl:
+  // WHY: yt-dlp/curl export Netscape (tab-separated). A one-line Cookie header
+  // has no tabs. Detect that so we do not split `key=value; key2=value2` as rows.
+  // Netscape columns: domain, flag, path, secure, expiration, name, value
   // https://curl.se/docs/http-cookies.html
-  // Fields are tab-separated:
-  // domain, flag, path, secure, expiration, name, value
-  //
-  // If it looks like key=value; key2=value2 style already, keep it as-is.
   const lines = trimmed.split(/\r?\n/).map((l) => l.trim());
   if (lines.length === 0) {
     return undefined;
   }
 
-  // Heuristic: Netscape format uses tabs + usually starts with comments (# ...).
   const nonComment = lines.filter((l) => l && !l.startsWith('#'));
   const sample = nonComment[0] ?? '';
   if (!sample.includes('\t')) {
-    // Assume it's already a "Cookie header" string or something compatible.
     return trimmed.replace(/\s+/g, ' ').trim();
   }
 
@@ -57,9 +53,9 @@ function parseCookieFileToHeader(cookieFileContent: string): string | undefined 
       continue;
     }
 
-    // Keep only cookies that are relevant to Google/YouTube auth.
-    // Netscape exports may include unrelated domains, and duplicate cookie names
-    // across domains can break the final Cookie header when sent to YouTube.
+    // WHY: Netscape dumps mix youtube.com / google.com / ads domains. Sending
+    // duplicate names (last cookie wins in a Map) from the wrong domain breaks
+    // the Cookie header YouTube actually validates.
     const isRelevantDomain =
       domain.includes('youtube.com') ||
       domain.includes('google.com') ||
@@ -68,7 +64,7 @@ function parseCookieFileToHeader(cookieFileContent: string): string | undefined 
       continue;
     }
 
-    cookieMap.set(name, value);
+    cookieMap.set(name, value); // last-wins when the same name appears twice
   }
 
   const pairs = [...cookieMap.entries()].map(([name, value]) => `${name}=${value}`);
