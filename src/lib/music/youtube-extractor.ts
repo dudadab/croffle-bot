@@ -3,7 +3,15 @@
  * then decode that file to 48 kHz stereo PCM for voice.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, renameSync, statSync, unlinkSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+  utimesSync,
+} from 'node:fs';
 import { join } from 'node:path';
 
 import { container } from '@sapphire/framework';
@@ -23,6 +31,10 @@ import { YouTubePoTokenMinter } from './youtube-po-token';
 
 const YOUTUBE_URL_RE =
   /^https?:\/\/(www\.|m\.|music\.)?(youtube\.com|youtu\.be|youtube-nocookie\.com)\//i;
+
+// WHY: a 5-person server replays the same tracks. 7 days plus touch-on-play
+// keeps those files and drops one-off downloads.
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export class CustomYoutubeExtractor extends BaseExtractor {
   private yt: Innertube | null = null;
@@ -105,6 +117,7 @@ export class CustomYoutubeExtractor extends BaseExtractor {
       const videoId = extractVideoId(info.url);
       const tempFilePath = join(this.tempDir, `${videoId}.m4a`);
       const minBytes = minBytesForDuration(durationToSeconds(info.duration));
+      this.purgeExpiredCache(tempFilePath);
 
       if (!this.isUsableCache(tempFilePath, minBytes)) {
         const legacyPath = join(this.tempDir, `${videoId}.audio`);
@@ -131,6 +144,7 @@ export class CustomYoutubeExtractor extends BaseExtractor {
         throw new Error(`Downloaded file is too small (${stats.size} bytes)`);
       }
 
+      this.touchCache(tempFilePath);
       container.logger.debug(`[CustomYT] Stream ready (${stats.size} bytes): ${tempFilePath}`);
       return this.decodeToPcm(tempFilePath);
     } catch (error) {
@@ -148,6 +162,49 @@ export class CustomYoutubeExtractor extends BaseExtractor {
       return statSync(path).size >= minBytes;
     } catch {
       return false;
+    }
+  }
+
+  private purgeExpiredCache(keepPath: string): void {
+    let names: string[];
+    try {
+      names = readdirSync(this.tempDir);
+    } catch (error) {
+      container.logger.warn('[CustomYT] Cache purge listing failed:', error);
+      return;
+    }
+
+    const now = Date.now();
+    for (const name of names) {
+      if (!name.endsWith('.m4a') && !name.endsWith('.audio')) {
+        continue;
+      }
+
+      const filePath = join(this.tempDir, name);
+      if (filePath === keepPath) {
+        continue;
+      }
+
+      try {
+        if (now - statSync(filePath).mtimeMs <= CACHE_TTL_MS) {
+          continue;
+        }
+
+        unlinkSync(filePath);
+        container.logger.debug(`[CustomYT] Expired cache removed: ${name}`);
+      } catch (error) {
+        // WHY: Windows can lock a file still held by ffmpeg from the previous track.
+        container.logger.warn(`[CustomYT] Failed to remove expired cache ${name}:`, error);
+      }
+    }
+  }
+
+  private touchCache(filePath: string): void {
+    const now = new Date();
+    try {
+      utimesSync(filePath, now, now);
+    } catch (error) {
+      container.logger.warn('[CustomYT] Cache touch failed:', error);
     }
   }
 
