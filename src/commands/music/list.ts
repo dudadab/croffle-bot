@@ -1,7 +1,7 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import { useQueue, type Track } from 'discord-player';
-import type { Message } from 'discord.js';
+import { MessageFlags, type Message } from 'discord.js';
 
 const QUEUE_PREVIEW_LIMIT = 10;
 const MAX_TITLE_LENGTH = 60;
@@ -17,7 +17,10 @@ export class UserCommand extends Command {
     const result = this.buildList(message.guildId);
 
     if (message.channel.isSendable()) {
-      await message.channel.send(result);
+      await message.channel.send({
+        content: result,
+        flags: MessageFlags.SuppressEmbeds,
+      });
     }
   }
 
