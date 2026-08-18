@@ -3,7 +3,7 @@ import { Listener } from '@sapphire/framework';
 import type { StoreRegistryValue } from '@sapphire/pieces';
 import { blue, gray, green, magenta, magentaBright, white, yellow } from 'colorette';
 
-import { getEnv } from '../lib/env';
+import { getEnv } from '../lib/env.js';
 
 const dev = process.env.NODE_ENV !== 'production';
 

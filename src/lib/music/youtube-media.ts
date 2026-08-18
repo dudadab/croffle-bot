@@ -2,7 +2,7 @@ import { createWriteStream, existsSync, statSync, unlinkSync } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
-import type Innertube from 'youtubei.js' with { 'resolution-mode': 'import' };
+import type Innertube from 'youtubei.js';
 
 const CHUNK_SIZE = 10 * 1024 * 1024;
 

@@ -1,10 +1,10 @@
 import { container } from '@sapphire/framework';
-import type Innertube from 'youtubei.js' with { 'resolution-mode': 'import' };
-import type { Types } from 'youtubei.js' with { 'resolution-mode': 'import' };
+import type Innertube from 'youtubei.js';
+import type { Types } from 'youtubei.js';
 
-import { downloadMediaToFile, removeIfExists } from './youtube-media';
-import type { YouTubePoTokenMinter } from './youtube-po-token';
-import { downloadSabrAudio } from './youtube-sabr';
+import { downloadMediaToFile, removeIfExists } from './youtube-media.js';
+import type { YouTubePoTokenMinter } from './youtube-po-token.js';
+import { downloadSabrAudio } from './youtube-sabr.js';
 
 // WHY: default WEB/ANDROID clients often return SABR-only adaptive formats with
 // no `url`. These still sometimes expose progressive URLs. Order is "most likely

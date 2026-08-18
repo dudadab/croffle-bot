@@ -5,11 +5,11 @@
  * snapshot is not immediately classified as Node.
  */
 import { container } from '@sapphire/framework';
-import type { WebPoSignalOutput } from 'bgutils-js/shared-types' with {
-  'resolution-mode': 'import',
-};
-import type { WebPoMinter } from 'bgutils-js/webpo' with { 'resolution-mode': 'import' };
-import type Innertube from 'youtubei.js' with { 'resolution-mode': 'import' };
+import type { WebPoSignalOutput } from 'bgutils-js/shared-types';
+import { USER_AGENT, buildURL, getHeaders } from 'bgutils-js/utils';
+import type { WebPoMinter } from 'bgutils-js/webpo';
+import { JSDOM } from 'jsdom';
+import type Innertube from 'youtubei.js';
 
 const YOUTUBE_REQUEST_KEY = 'O43z0dpjhgX20SCx4KAo';
 
@@ -21,7 +21,6 @@ export async function getYouTubeUserAgent(): Promise<string> {
     return youtubeUserAgent;
   }
 
-  const { USER_AGENT } = await import('bgutils-js/utils');
   youtubeUserAgent = USER_AGENT;
   return USER_AGENT;
 }
@@ -44,7 +43,6 @@ async function ensureDomEnvironment(): Promise<void> {
   }
 
   const userAgent = await getYouTubeUserAgent();
-  const { JSDOM } = await import('jsdom');
   const dom = new JSDOM('<!DOCTYPE html><html><head></head><body></body></html>', {
     url: 'https://www.youtube.com/',
     referrer: 'https://www.youtube.com/',
@@ -115,7 +113,6 @@ async function createMinterFromChallenge(
   const botguardResponse = await botGuardClient.snapshot({ webPoSignalOutput });
 
   const { WebPoMinter } = await import('bgutils-js/webpo');
-  const { buildURL, getHeaders } = await import('bgutils-js/utils');
   const integrityTokenResponse = await fetch(buildURL('GenerateIT', true), {
     method: 'POST',
     headers: getHeaders() as HeadersInit,

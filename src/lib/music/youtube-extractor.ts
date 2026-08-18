@@ -16,18 +16,23 @@ import { join } from 'node:path';
 
 import { container } from '@sapphire/framework';
 import { BaseExtractor, type ExtractorInfo, type ExtractorStreamable, Track } from 'discord-player';
-import ffmpegPath from 'ffmpeg-static';
-import type Innertube from 'youtubei.js' with { 'resolution-mode': 'import' };
+import ffmpegStatic from 'ffmpeg-static';
+import type Innertube from 'youtubei.js';
 
-import { downloadYouTubeAudio } from './youtube-download';
+import { downloadYouTubeAudio } from './youtube-download.js';
 import {
   durationToSeconds,
   extractVideoId,
   minBytesForDuration,
   parseDuration,
-} from './youtube-id';
-import { createYouTubeSession } from './youtube-innertube';
-import { YouTubePoTokenMinter } from './youtube-po-token';
+} from './youtube-id.js';
+import { createYouTubeSession } from './youtube-innertube.js';
+import { YouTubePoTokenMinter } from './youtube-po-token.js';
+
+const ffmpegPath =
+  typeof ffmpegStatic === 'string'
+    ? ffmpegStatic
+    : ((ffmpegStatic as { default?: string | null }).default ?? null);
 
 const YOUTUBE_URL_RE =
   /^https?:\/\/(www\.|m\.|music\.)?(youtube\.com|youtu\.be|youtube-nocookie\.com)\//i;

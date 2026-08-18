@@ -38,28 +38,33 @@ export class UserCommand extends Command {
     try {
       const feedbackMessage = await message.channel.send(`Searching for \`${query}\`...`);
 
-      const { track, queue } = await player.play(voiceChannel, query, {
-        nodeOptions: {
-          metadata: message,
-          bufferingTimeout: 30000,
-          connectionTimeout: 30000,
-          leaveOnStop: true,
-          leaveOnEmpty: true,
-          leaveOnEnd: true,
-          leaveOnEmptyCooldown: 30_000,
-          leaveOnEndCooldown: 30_000,
-          // WHY: extractor already emits 48 kHz s16le PCM. The default
-          // equalizer/resampler/volume chain reprocesses it and can stutter.
-          disableVolume: true,
-          disableEqualizer: true,
-          disableBiquad: true,
-          disableResampler: true,
-          disableFilterer: true,
-          disableCompressor: true,
-          disableReverb: true,
-          disableSeeker: true,
+      const { track, queue } = await player.play(
+        // WHY: same CJS/ESM discord.js private-field mismatch as Player(client).
+        voiceChannel as unknown as Parameters<typeof player.play>[0],
+        query,
+        {
+          nodeOptions: {
+            metadata: message,
+            bufferingTimeout: 30000,
+            connectionTimeout: 30000,
+            leaveOnStop: true,
+            leaveOnEmpty: true,
+            leaveOnEnd: true,
+            leaveOnEmptyCooldown: 30_000,
+            leaveOnEndCooldown: 30_000,
+            // WHY: extractor already emits 48 kHz s16le PCM. The default
+            // equalizer/resampler/volume chain reprocesses it and can stutter.
+            disableVolume: true,
+            disableEqualizer: true,
+            disableBiquad: true,
+            disableResampler: true,
+            disableFilterer: true,
+            disableCompressor: true,
+            disableReverb: true,
+            disableSeeker: true,
+          },
         },
-      });
+      );
 
       if (queue.isPlaying() && queue.tracks.size > 0) {
         return feedbackMessage.edit(

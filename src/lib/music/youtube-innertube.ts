@@ -1,14 +1,10 @@
 /**
  * Innertube session used by the custom YouTube extractor.
- *
- * WHY: this package is CJS while youtubei.js is ESM. Type-only imports need
- * `resolution-mode: import` so tsc does not try to load them as CJS.
  */
-import type Innertube from 'youtubei.js' with { 'resolution-mode': 'import' };
-import type { Types } from 'youtubei.js' with { 'resolution-mode': 'import' };
+import Innertube, { Platform, type Types } from 'youtubei.js';
 
-import { getEnv } from '../env';
-import { getYouTubeUserAgent } from './youtube-po-token';
+import { getEnv } from '../env.js';
+import { getYouTubeUserAgent } from './youtube-po-token.js';
 
 function buildPlayerEvalScript(
   data: Types.BuildScriptResult,
@@ -28,8 +24,6 @@ function buildPlayerEvalScript(
 }
 
 export async function createYouTubeSession(): Promise<Innertube> {
-  const { Innertube, Platform } = await import('youtubei.js');
-
   Platform.shim.eval = async (
     data: Types.BuildScriptResult,
     env: Record<string, Types.VMPrimative>,

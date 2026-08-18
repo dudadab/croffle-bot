@@ -2,7 +2,7 @@ import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import type { Message } from 'discord.js';
 
-import { getEnv } from '../../lib/env';
+import { getEnv } from '../../lib/env.js';
 
 @ApplyOptions<Command.Options>({
   description: 'Show this edge node status',

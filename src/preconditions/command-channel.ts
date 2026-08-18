@@ -6,7 +6,7 @@ import type {
   Message,
 } from 'discord.js';
 
-import { getEnv } from '../lib/env';
+import { getEnv } from '../lib/env.js';
 
 @ApplyOptions<AllFlowsPrecondition.Options>({
   name: 'CommandChannel',

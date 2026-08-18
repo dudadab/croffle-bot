@@ -3,13 +3,14 @@
  * Used when InnerTube clients no longer return progressive googlevideo URLs.
  */
 import { container } from '@sapphire/framework';
-import type { ReloadPlaybackContext } from 'googlevideo/protos' with {
-  'resolution-mode': 'import',
-};
-import type { FormatStream } from 'googlevideo/shared-types' with { 'resolution-mode': 'import' };
-import type Innertube from 'youtubei.js' with { 'resolution-mode': 'import' };
+import type { ReloadPlaybackContext } from 'googlevideo/protos';
+import { SabrStream } from 'googlevideo/sabr-stream';
+import type { FormatStream } from 'googlevideo/shared-types';
+import { buildSabrFormat, EnabledTrackTypes } from 'googlevideo/utils';
+import { Constants, YTNodes } from 'youtubei.js';
+import type Innertube from 'youtubei.js';
 
-import { createMediaFetch, writeWebStreamToFile } from './youtube-media';
+import { createMediaFetch, writeWebStreamToFile } from './youtube-media.js';
 
 // WHY: formats with this xtag (Voice Boost) make the server emit
 // "reload player response" and then `sabr.no_audio_selected`. Filtering them
@@ -38,7 +39,6 @@ async function fetchPlayerResponse(
   poToken: string,
   reloadPlaybackContext?: ReloadPlaybackContext,
 ): Promise<PlayerResponse> {
-  const { YTNodes } = await import('youtubei.js');
   const watchEndpoint = new YTNodes.NavigationEndpoint({ watchEndpoint: { videoId } });
   const extraArgs: Record<string, unknown> = {
     playbackContext: {
@@ -96,10 +96,6 @@ export async function downloadSabrAudio(
   filePath: string,
   poToken: string,
 ): Promise<void> {
-  const [{ SabrStream }, { EnabledTrackTypes, buildSabrFormat }, { Constants }] = await Promise.all(
-    [import('googlevideo/sabr-stream'), import('googlevideo/utils'), import('youtubei.js')],
-  );
-
   const info = await fetchPlayerResponse(innertube, videoId, poToken);
   const initial = await applyPlayerStreamingConfig(innertube, info);
   const clientName = innertube.session.context.client

@@ -1,7 +1,7 @@
 import { container } from '@sapphire/framework';
 
-import { CustomClient } from './lib/client';
-import { env } from './lib/setup';
+import { CustomClient } from './lib/client.js';
+import { env } from './lib/setup.js';
 
 const client = new CustomClient(env);
 

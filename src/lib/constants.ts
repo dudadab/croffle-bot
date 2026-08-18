@@ -1,4 +1,6 @@
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-export const rootDir = join(__dirname, '..', '..');
+const here = import.meta.dirname;
+export const rootDir = join(here, '..', '..');
 export const srcDir = join(rootDir, 'src');

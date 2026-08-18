@@ -5,7 +5,7 @@ import '@sapphire/plugin-logger/register';
 import { ApplicationCommandRegistries, RegisterBehavior } from '@sapphire/framework';
 import * as colorette from 'colorette';
 
-import { loadEnv } from './env';
+import { loadEnv } from './env.js';
 
 ApplicationCommandRegistries.setDefaultBehaviorWhenNotIdentical(RegisterBehavior.BulkOverwrite);
 

@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "author": "Croffle Dev.",
   "license": "MIT",
-  "type": "commonjs",
+  "type": "module",
   "description": "pipit-hub is a discord bot made by Croffle Dev.",
   "keywords": [
     "discord",

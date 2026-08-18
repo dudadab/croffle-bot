@@ -4,7 +4,7 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { container } from '@sapphire/framework';
 import { setup } from '@skyra/env-utilities';
 
-import { rootDir } from './constants';
+import { rootDir } from './constants.js';
 
 export type BotRole = 'main' | 'edge';
 

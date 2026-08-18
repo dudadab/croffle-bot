@@ -2,8 +2,8 @@ import { LogLevel, SapphireClient, container } from '@sapphire/framework';
 import { Player } from 'discord-player';
 import { GatewayIntentBits } from 'discord.js';
 
-import type { EnvConfig } from './env';
-import { CustomYoutubeExtractor } from './music/youtube-extractor';
+import type { EnvConfig } from './env.js';
+import { CustomYoutubeExtractor } from './music/youtube-extractor.js';
 
 export class CustomClient extends SapphireClient {
   public player: Player | null = null;
@@ -26,7 +26,9 @@ export class CustomClient extends SapphireClient {
     });
 
     if (config.isMain) {
-      this.player = new Player(this, {
+      // WHY: discord-player is CJS and types discord.js via require(). NodeNext
+      // loads SapphireClient through ESM, so private fields do not match.
+      this.player = new Player(this as unknown as ConstructorParameters<typeof Player>[0], {
         // WHY: CustomYoutubeExtractor already emits s16le PCM. Letting
         // discord-player probe/transcode the local file ended tracks in ~120ms.
         skipFFmpeg: true,
