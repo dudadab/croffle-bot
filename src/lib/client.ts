@@ -55,7 +55,7 @@ export class CustomClient extends SapphireClient {
   public override async login(token?: string) {
     if (this.config.isMain && this.player) {
       if (!this.config.youtubeCookie) {
-        container.logger.warn('YOUTUBE_COOKIE is not set; YouTube extraction may fail.');
+        container.logger.warn('YouTube cookie is not set; SABR extraction may fail.');
       }
 
       await this.player.extractors.register(CustomYoutubeExtractor, {});
