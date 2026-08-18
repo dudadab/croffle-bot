@@ -34,15 +34,6 @@ export class CustomClient extends SapphireClient {
         probeTimeout: 0,
       });
 
-      // Keep player debug visible while streaming is unstable.
-      this.player.on('debug', (message) => {
-        container.logger.debug(`[player-lib] ${message}`);
-      });
-
-      this.player.events.on('debug', (_, message) => {
-        container.logger.debug(`[player] ${message}`);
-      });
-
       this.player.events.on('playerError', (_, error) => {
         container.logger.error('[player]', error);
       });

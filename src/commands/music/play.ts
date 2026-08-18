@@ -48,6 +48,16 @@ export class UserCommand extends Command {
           leaveOnEnd: true,
           leaveOnEmptyCooldown: 30_000,
           leaveOnEndCooldown: 30_000,
+          // WHY: extractor already emits 48 kHz s16le PCM. The default
+          // equalizer/resampler/volume chain reprocesses it and can stutter.
+          disableVolume: true,
+          disableEqualizer: true,
+          disableBiquad: true,
+          disableResampler: true,
+          disableFilterer: true,
+          disableCompressor: true,
+          disableReverb: true,
+          disableSeeker: true,
         },
       });
 
