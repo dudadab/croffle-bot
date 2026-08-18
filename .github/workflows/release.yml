@@ -1,0 +1,294 @@
+# Container image release (GHCR) + GitHub Release draft
+#
+# Trigger: Actions → "Pipit Hub Release" → Run workflow
+#   - release_type: rc | patch | minor | major
+#   - version: optional exact semver (no leading v). If empty, bump from package.json.
+#   - version_suffix: optional prerelease id (e.g. rc.1, beta.2).
+#   - dry_run: build the image only — no version commit/tag/GHCR push/draft
+#
+# Order: bump+tag → push image to GHCR → create a draft GitHub Release.
+
+name: Pipit Hub Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Version bump kind (ignored when `version` is set, except `rc` default suffix)
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - rc
+        default: patch
+      version:
+        description: Exact version without leading v (e.g. 1.2.0). Leave empty to auto-bump.
+        required: false
+        type: string
+        default: ''
+      version_suffix:
+        description: Prerelease suffix without leading hyphen (e.g. rc.1, beta.2). Empty = none (rc defaults to rc.N).
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        description: Build the image only (no commit, tag, GHCR push, or draft)
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: pipit-hub-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.calc.outputs.version }}
+      tag: ${{ steps.calc.outputs.tag }}
+      ref: ${{ steps.commit.outputs.ref }}
+      is_prerelease: ${{ steps.calc.outputs.is_prerelease }}
+      dry_run: ${{ steps.calc.outputs.dry_run }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Calculate version
+        id: calc
+        shell: bash
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+          INPUT_VERSION: ${{ inputs.version }}
+          VERSION_SUFFIX: ${{ inputs.version_suffix }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          CURRENT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('package.json','utf8')).version)")
+          echo "Current package version: $CURRENT"
+
+          core_of() {
+            node -e "const v=process.argv[1].replace(/^v/,'').split(/[-+]/)[0]; if(!/^\d+\.\d+\.\d+$/.test(v)){console.error('Invalid semver core:', process.argv[1]); process.exit(1)}; console.log(v)" "$1"
+          }
+
+          bump_core() {
+            local core="$1" kind="$2"
+            node -e "
+              const [maj, min, pat] = process.argv[1].split('.').map(Number);
+              const kind = process.argv[2];
+              if (kind === 'major') console.log(\`\${maj + 1}.0.0\`);
+              else if (kind === 'minor') console.log(\`\${maj}.\${min + 1}.0\`);
+              else console.log(\`\${maj}.\${min}.\${pat + 1}\`);
+            " "$core" "$kind"
+          }
+
+          NEXT=""
+          if [[ -n "${INPUT_VERSION}" ]]; then
+            NEXT="${INPUT_VERSION#v}"
+          else
+            CORE="$(core_of "$CURRENT")"
+            case "$RELEASE_TYPE" in
+              major|minor|patch)
+                NEXT="$(bump_core "$CORE" "$RELEASE_TYPE")"
+                ;;
+              rc)
+                if [[ "$CURRENT" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-rc\.([0-9]+)$ ]]; then
+                  NEXT="${BASH_REMATCH[1]}-rc.$((BASH_REMATCH[2] + 1))"
+                else
+                  NEXT="$(bump_core "$CORE" patch)-rc.1"
+                fi
+                ;;
+              *)
+                echo "Unknown release_type: $RELEASE_TYPE" >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+          if [[ -n "${VERSION_SUFFIX}" ]]; then
+            SUFFIX="${VERSION_SUFFIX#-}"
+            NEXT="$(core_of "$NEXT")-${SUFFIX}"
+          fi
+
+          if [[ ! "$NEXT" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-].+)?$ ]]; then
+            echo "Computed version looks invalid: $NEXT" >&2
+            exit 1
+          fi
+
+          IS_PRE=false
+          if [[ "$NEXT" == *-* ]]; then
+            IS_PRE=true
+          fi
+
+          TAG="v${NEXT}"
+          echo "Resolved version: $NEXT (tag $TAG, prerelease=$IS_PRE, dry_run=$DRY_RUN)"
+
+          if [[ "$DRY_RUN" != "true" ]]; then
+            if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q .; then
+              echo "::error::Tag ${TAG} already exists on origin."
+              exit 1
+            fi
+          fi
+
+          {
+            echo "version=${NEXT}"
+            echo "tag=${TAG}"
+            echo "is_prerelease=${IS_PRE}"
+            echo "dry_run=${DRY_RUN}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Write package version
+        if: ${{ inputs.dry_run != true }}
+        shell: bash
+        env:
+          NEW_VERSION: ${{ steps.calc.outputs.version }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const version = process.env.NEW_VERSION;
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.version = version;
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          console.log(`Updated package.json → ${version}`);
+          NODE
+
+      - name: Commit, tag, push
+        id: commit
+        shell: bash
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          NEW_VERSION: ${{ steps.calc.outputs.version }}
+          TAG: ${{ steps.calc.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$DRY_RUN" == "true" ]]; then
+            echo "dry_run — skip commit/tag/push"
+            echo "ref=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "release: v${NEW_VERSION}"
+
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              break
+            fi
+            if [[ $attempt -eq 3 ]]; then
+              echo "branch push failed after 3 attempts" >&2
+              exit 1
+            fi
+            echo "push rejected (attempt $attempt/3) — rebasing…"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+          done
+
+          git tag "$TAG"
+          git push origin "$TAG"
+
+          echo "ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: Push GHCR and draft release
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.ref }}
+
+      - name: Pin package version (dry_run)
+        if: ${{ needs.version.outputs.dry_run == 'true' }}
+        shell: bash
+        env:
+          NEW_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const version = process.env.NEW_VERSION;
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.version = version;
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          NODE
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: ${{ needs.version.outputs.dry_run != 'true' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ needs.version.outputs.version }}
+            type=raw,value=${{ needs.version.outputs.tag }}
+            type=raw,value=latest,enable=${{ needs.version.outputs.is_prerelease == 'false' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ needs.version.outputs.dry_run != 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create draft GitHub Release
+        if: ${{ needs.version.outputs.dry_run != 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.version }}
+          IS_PRE: ${{ needs.version.outputs.is_prerelease }}
+          IMAGE: ${{ env.IMAGE_NAME }}
+        run: |
+          set -euo pipefail
+          NOTES="$(cat <<EOF
+          Image: \`${IMAGE}:${VERSION}\`
+
+          Pull:
+
+          \`\`\`sh
+          docker pull ${IMAGE}:${VERSION}
+          \`\`\`
+          EOF
+          )"
+          ARGS=(--draft --title "$VERSION" --notes "$NOTES")
+          if [[ "$IS_PRE" == "true" ]]; then
+            ARGS+=(--prerelease)
+          fi
+          gh release create "$TAG" "${ARGS[@]}" --repo "$GITHUB_REPOSITORY"
+          echo "Created draft release $TAG after GHCR push"

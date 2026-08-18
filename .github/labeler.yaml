@@ -1,0 +1,59 @@
+# Used by actions/labeler (see .github/workflows/labeler.yml).
+# Label names must exist in the repo, or the workflow needs `issues: write` to create them.
+
+music:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/lib/music/**
+          - src/commands/music/**
+
+commands:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/commands/**
+
+listeners:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/listeners/**
+
+docker:
+  - changed-files:
+      - any-glob-to-any-file:
+          - Dockerfile
+          - docker-compose.yaml
+          - .dockerignore
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - docs/**
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - package.json
+          - yarn.lock
+          - .yarnrc.yml
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/**
+          - .github/labeler.yaml
+          - .github/CODEOWNERS
+
+feature:
+  - head-branch:
+      - '^feat'
+      - '^feature'
+
+bug:
+  - head-branch:
+      - '^fix'
+      - '^bug'
+
+refactor:
+  - head-branch:
+      - '^refactor'
